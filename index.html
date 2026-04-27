@@ -768,12 +768,15 @@ async function bulkIssue(type) {
     const errEl = document.getElementById(errId);
     if(errEl) errEl.textContent = '';
     
+    let currentSeq = null;
     for(let i=0; i<results.length; i++) {
       const r = results[i];
       btn.textContent = `🚀 발행 중... (${i+1}/${results.length})`;
       
       const sType = type==='golf'?'golf':type==='award'?'award':'training';
-      const serial = await nextSerial(sType, dateSerial(r.maxDate));
+      const ns = await nextSerial(sType, dateSerial(r.maxDate), currentSeq);
+      currentSeq = ns.newSeq + 1;
+      const serial = ns.serial;
       
       if(type==='award') {
         const header = {
@@ -885,22 +888,28 @@ function swList(tab) {
 async function sb(path,opts={}) {
   const res=await fetch(`${SB_URL}/rest/v1/${path}`,{
     headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':opts.prefer||'return=representation',...(opts.headers||{})},
+    cache: 'no-store',
     ...opts
   })
   const t=await res.text(); return t?JSON.parse(t):null
 }
 
-async function nextSerial(type, dateStr) {
+async function nextSerial(type, dateStr, currentSeq = null) {
   const rows=await sb(`receipt_counters?receipt_type=eq.${type}&select=*`)
   const c=rows?.[0]
-  const newSeq=(c&&c.counter_date.replace(/-/g,'').slice(2)===dateStr)?c.last_seq+1:1
+  
+  let newSeq = currentSeq;
+  if (newSeq === null) {
+    newSeq=(c&&c.counter_date.replace(/-/g,'').slice(2)===dateStr)?c.last_seq+1:1
+  }
+  
   const fullDate=`20${dateStr.slice(0,2)}-${dateStr.slice(2,4)}-${dateStr.slice(4,6)}`
   if (c) {
     await sb(`receipt_counters?receipt_type=eq.${type}`,{method:'PATCH',prefer:'return=minimal',body:JSON.stringify({counter_date:fullDate,last_seq:newSeq})})
   } else {
     await sb(`receipt_counters`,{method:'POST',prefer:'return=minimal',body:JSON.stringify({receipt_type:type, counter_date:fullDate,last_seq:newSeq})})
   }
-  return `KODA-${dateStr}-${String(newSeq).padStart(2,'0')}`
+  return { serial: `KODA-${dateStr}-${String(newSeq).padStart(2,'0')}`, newSeq };
 }
 
 function dateSerial(d) { return d.replace(/-/g,'').slice(2) }
