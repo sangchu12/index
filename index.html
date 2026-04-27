@@ -667,13 +667,14 @@ async function bulkIssue(type) {
     const errEl = document.getElementById(errId);
     if(errEl) errEl.textContent = '';
     
-    let currentSeq = null;
+    let seqMap = {};
     for(let i=0; i<results.length; i++) {
       const r = results[i];
       btn.textContent = `🚀 발행 중... (${i+1}/${results.length})`;
       
-      const ns = await nextSerial('golf', dateSerial(r.maxDate), currentSeq);
-      currentSeq = ns.newSeq + 1;
+      const dStr = dateSerial(r.maxDate);
+      const ns = await nextSerial('golf', dStr, seqMap[dStr] || null);
+      seqMap[dStr] = ns.newSeq + 1;
       const serial = ns.serial;
       
       const itemsJson = JSON.stringify(r.items.map(it => ({
@@ -724,19 +725,21 @@ async function sb(path,opts={}) {
 }
 
 async function nextSerial(type, dateStr, currentSeq = null) {
-  const rows=await sb(`receipt_counters?receipt_type=eq.${type}&select=*`)
-  const c=rows?.[0]
-  
   let newSeq = currentSeq;
   if (newSeq === null) {
-    newSeq=(c&&c.counter_date.replace(/-/g,'').slice(2)===dateStr)?c.last_seq+1:1
-  }
-  
-  const fullDate=`20${dateStr.slice(0,2)}-${dateStr.slice(2,4)}-${dateStr.slice(4,6)}`
-  if (c) {
-    await sb(`receipt_counters?receipt_type=eq.${type}`,{method:'PATCH',prefer:'return=minimal',body:JSON.stringify({counter_date:fullDate,last_seq:newSeq})})
-  } else {
-    await sb(`receipt_counters`,{method:'POST',prefer:'return=minimal',body:JSON.stringify({receipt_type:type, counter_date:fullDate,last_seq:newSeq})})
+    const fullDate=`20${dateStr.slice(0,2)}-${dateStr.slice(2,4)}-${dateStr.slice(4,6)}`
+    const existing = await sb(`golf_receipts?issue_date=eq.${fullDate}&select=serial_number`);
+    let max = 0;
+    if (existing && existing.length > 0) {
+      existing.forEach(r => {
+        const parts = r.serial_number.split('-');
+        if (parts.length === 3) {
+          const num = parseInt(parts[2], 10);
+          if (num > max) max = num;
+        }
+      });
+    }
+    newSeq = max + 1;
   }
   return { serial: `KODA-${dateStr}-${String(newSeq).padStart(2,'0')}`, newSeq };
 }
