@@ -268,12 +268,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--txt)
           <p class="paste-hint">기존 로우 데이터를 <strong>헤더 포함</strong> 그대로 복사해서 붙여넣으세요. G열(회사명) 기준으로 회원사를 자동 매칭합니다.</p>
           <div class="paste-cols">
             <span class="paste-col">A: NO</span>
-            <span class="paste-col">B: 일렬번호</span>
+            <span class="paste-col">B: 년도</span>
             <span class="paste-col">C: 거래일시</span>
-            <span class="paste-col">D: 번호</span>
-            <span class="paste-col">E: 입금액</span>
-            <span class="paste-col">F: 회사명</span>
-            <span class="paste-col">G: 법인명 (매칭 기준)</span>
+            <span class="paste-col">D: 입금액</span>
+            <span class="paste-col">E: 출금액</span>
+            <span class="paste-col">F: 내용</span>
+            <span class="paste-col">I: 회사명 (매칭 기준)</span>
+            <span class="paste-col">K: 비고</span>
           </div>
           <textarea class="ptxt" id="golfPasteTxt" placeholder="NO	일렬번호	거래일시	번호	입금액	입금자명	회사명&#10;1	250409-01	2025-04-09	1	700,000	이엠씨지	주식회사 이엠씨지"></textarea>
           <div style="display:flex;gap:8px;margin-top:8px">
@@ -332,13 +333,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--txt)
           <div class="sec-label">📋 엑셀 붙여넣기 (빠른 입력)</div>
           <p class="paste-hint">기존 로우 데이터를 <strong>헤더 포함</strong> 그대로 복사해서 붙여넣으세요. G열(회사명) 기준으로 회원사를 자동 매칭합니다.</p>
           <div class="paste-cols">
-            <span class="paste-col">A: 법인명</span>
-            <span class="paste-col">B: 사업자등록번호</span>
-            <span class="paste-col">C: 주소</span>
-            <span class="paste-col">D: 납부일</span>
-            <span class="paste-col">E: 구분 (출품비/추가트로피/협찬금/환불금)</span>
-            <span class="paste-col">F: 금액</span>
-            <span class="paste-col">G: 비고</span>
+            <span class="paste-col">A: NO</span>
+            <span class="paste-col">B: 년도</span>
+            <span class="paste-col">C: 거래일시</span>
+            <span class="paste-col">D: 입금액</span>
+            <span class="paste-col">E: 출금액</span>
+            <span class="paste-col">F: 내용</span>
+            <span class="paste-col">I: 회사명 (매칭 기준)</span>
+            <span class="paste-col">K: 비고</span>
           </div>
           <textarea class="ptxt" id="awardPasteTxt" placeholder="NO	일렬번호	거래일시	번호	입금액	입금자명	회사명&#10;1	251013-01	2025-10-13	1	200,000	가치브라더	주식회사 가치브라더"></textarea>
           <div style="display:flex;gap:8px;margin-top:8px">
@@ -393,12 +395,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--txt)
           <div class="sec-label">📋 엑셀 붙여넣기 (빠른 입력)</div>
           <p class="paste-hint">기존 로우 데이터를 <strong>헤더 포함</strong> 그대로 복사해서 붙여넣으세요. G열(회사명) 기준으로 회원사를 자동 매칭합니다.</p>
           <div class="paste-cols">
-            <span class="paste-col">A: 법인명</span>
-            <span class="paste-col">B: 사업자등록번호</span>
-            <span class="paste-col">C: 주소</span>
-            <span class="paste-col">D: 납부일</span>
-            <span class="paste-col">E: 금액</span>
-            <span class="paste-col">F: 비고</span>
+            <span class="paste-col">A: NO</span>
+            <span class="paste-col">B: 년도</span>
+            <span class="paste-col">C: 거래일시</span>
+            <span class="paste-col">D: 입금액</span>
+            <span class="paste-col">E: 출금액</span>
+            <span class="paste-col">F: 내용</span>
+            <span class="paste-col">I: 회사명 (매칭 기준)</span>
+            <span class="paste-col">K: 비고</span>
           </div>
           <textarea class="ptxt" id="trainPasteTxt" placeholder="NO	일렬번호	거래일시	번호	입금액	입금자명	회사명&#10;1	250101-01	2025-01-01	1	300,000	회사명	법인명"></textarea>
           <div style="display:flex;gap:8px;margin-top:8px">
@@ -753,55 +757,142 @@ function parsePaste(type) {
   if(!txt) { alert('내용을 붙여넣어 주세요'); return }
 
   const lines = txt.split('\n').filter(l=>l.trim())
-  const results = []
+  const rawResults = []
 
-  lines.forEach(line=>{
+  lines.forEach((line, index)=>{
     const c = line.split('\t').map(s=>s.trim())
-    if(c.length<1||!c[0]) return
+    if(c.length<4) return
+    if(index===0 && c[0]==='NO') return // 헤더 스킵
+
+    // 0:NO  1:년도  2:거래일시  3:입금액  4:출금액  5:내용  6:잔액  7:거래점명  8:회사명  9:구분  10:비고
+    let payDate = (c[2] || '').split(' ')[0].replace(/\./g, '-');
+    if(!payDate) payDate = today();
+
+    let amt = Number((c[3] || '0').replace(/,/g, ''));
+    let outAmt = Number((c[4] || '0').replace(/,/g, ''));
+    const note = c[10] || '';
+    const content = c[5] || '';
+
+    // 환불 감지 로직
+    if(outAmt > 0) amt = -outAmt;
+    else if(note.includes('환불') || content.includes('환불')) amt = -Math.abs(amt);
+
+    if(amt === 0) return; // 입금/출금이 없으면 스킵
+
+    const nameRaw = c[8] || content || '';
+    if(!nameRaw) return;
+
+    const member = findMember(nameRaw) || findMember(content);
+    const name = member ? member.biz : nameRaw;
+    const reg = member ? member.reg : '';
+    const addr = member ? member.addr : '';
 
     if(type==='golf'||type==='train') {
-      // A:법인명 B:사업자번호 C:주소 D:납부일 E:금액 F:비고
-      const name=c[0]||'', reg=c[1]||'', addr=c[2]||''
-      const payDate=c[3]||today(), amt=Number((c[4]||'0').replace(/,/g,'')), note=c[5]||''
-      const member=findMember(name)
-      results.push({name, reg:reg||member?.reg||'', addr:addr||member?.addr||'', payDate, amt, note, matched:!!member})
+      rawResults.push({name, reg, addr, payDate, amt, note, matched:!!member, nameRaw})
     } else {
-      // A:법인명 B:사업자번호 C:주소 D:납부일 E:구분 F:금액 G:비고
-      const name=c[0]||'', reg=c[1]||'', addr=c[2]||''
-      const payDate=c[3]||today()
-      const itemType=c[4]||'출품비'
-      const amt=Number((c[5]||'0').replace(/,/g,''))
-      const note=c[6]||''
-      const member=findMember(name)
-      results.push({name, reg:reg||member?.reg||'', addr:addr||member?.addr||'', payDate, itemType, amt, note, matched:!!member})
+      let itemType = '출품비'
+      if(note.includes('협찬') || content.includes('협찬')) itemType = '협찬금'
+      else if(note.includes('트로피') || content.includes('트로피')) itemType = '추가트로피'
+      else if(amt < 0) itemType = '환불금'
+
+      rawResults.push({name, reg, addr, payDate, itemType, amt, note, matched:!!member, nameRaw})
     }
   })
 
-  if(!results.length) {
+  if(!rawResults.length) {
     document.getElementById(resId).innerHTML='<div style="color:var(--danger);font-size:13px">파싱할 수 있는 내용이 없습니다. 탭으로 구분된 형식인지 확인해주세요.</div>'
     return
   }
 
+  // 회사명 기준으로 그룹화
+  const grouped = {};
+  rawResults.forEach(r => {
+    if(!grouped[r.name]) {
+      grouped[r.name] = { name: r.name, nameRaw: r.nameRaw, reg: r.reg, addr: r.addr, matched: r.matched, items: [], totalAmount: 0, maxDate: r.payDate };
+    }
+    grouped[r.name].items.push(r);
+    grouped[r.name].totalAmount += r.amt;
+    if(r.payDate > grouped[r.name].maxDate) grouped[r.name].maxDate = r.payDate;
+  });
+  const results = Object.values(grouped);
+
   const mc=results.filter(r=>r.matched).length
-  let html=`<div class="match-sum">총 <strong>${results.length}건</strong> 중 <span style="color:var(--ok);font-weight:700">${mc}건 회원사 매칭</span>, <span style="color:var(--sub);font-weight:700">${results.length-mc}건 미매칭</span></div>`
+  let html=`<div class="match-sum">총 <strong>${results.length}업체</strong> (총 내역 ${rawResults.length}건) 중 <span style="color:var(--ok);font-weight:700">${mc}곳 매칭</span>, <span style="color:var(--sub);font-weight:700">${results.length-mc}곳 미매칭</span></div>`
   html+=`<div class="mlist">`
   results.forEach((r,i)=>{
     const badge=r.matched?'<span class="mi-badge ok-badge">✓ 매칭</span>':'<span class="mi-badge no-badge">미매칭</span>'
-    const detail = type==='award'
-      ? `${r.payDate} / ${r.itemType} / ${r.amt.toLocaleString()}원`
-      : `${r.payDate} / ${r.amt.toLocaleString()}원 / ${r.note||'-'}`
     html+=`<div class="mi ${r.matched?'ok':'warn'}">
-      <div class="mi-name">${badge}${r.name}${r.reg?' ('+r.reg+')':''}</div>
-      <div class="mi-detail">${detail}</div>
+      <div class="mi-name">${badge}${r.nameRaw}${r.matched && r.nameRaw !== r.name ? ' → ' + r.name : ''}${r.reg?' ('+r.reg+')':''}</div>
+      <div class="mi-detail">발행일(최신): ${r.maxDate} / 합계: ${r.totalAmount.toLocaleString()}원 (${r.items.length}건 합산)</div>
     </div>`
   })
   html+=`</div>`
   html+=`<div class="apply-bar" style="margin-top:12px">
-    <button class="btn" style="background:var(--${type==='golf'?'golf':type==='award'?'award':'train'});width:auto;padding:10px 20px" onclick="applyPaste('${type}',${JSON.stringify(results).replace(/'/g,'&apos;')})">✅ 폼에 적용</button>
-    <span style="font-size:12px;color:var(--sub)">적용 후 내용을 확인하고 영수증을 발행하세요</span>
+    <button class="btn" id="bulkBtn_${type}" style="background:var(--${type==='golf'?'golf':type==='award'?'award':'train'});width:auto;padding:10px 20px" onclick="bulkIssue('${type}',${JSON.stringify(results).replace(/'/g,'&apos;')})">🚀 ${results.length}업체 영수증 일괄 발행하기</button>
+    <span style="font-size:12px;color:var(--sub)">버튼을 누르면 위 업체들의 영수증이 동시에 모두 발행됩니다.</span>
   </div>`
 
   document.getElementById(resId).innerHTML=html
+}
+
+async function bulkIssue(type, results) {
+  const btn = document.getElementById('bulkBtn_'+type);
+  if(!btn) return;
+  btn.disabled = true;
+  
+  const errId = type==='golf'?'golfErr':type==='award'?'awardErr':'trainErr';
+  const errEl = document.getElementById(errId);
+  if(errEl) errEl.textContent = '';
+  
+  try {
+    for(let i=0; i<results.length; i++) {
+      const r = results[i];
+      btn.textContent = `🚀 발행 중... (${i+1}/${results.length})`;
+      
+      const sType = type==='golf'?'golf':type==='award'?'award':'training';
+      const serial = await nextSerial(sType, dateSerial(r.maxDate));
+      
+      if(type==='award') {
+        const header = {
+          serial_number: serial, issue_date: r.maxDate, payer_name: r.name,
+          payer_reg_no: r.reg||null, payer_address: r.addr||null, total_amount: r.totalAmount
+        };
+        const saved = await sb('award_receipts',{method:'POST',body:JSON.stringify(header)});
+        const rid = saved?.[0]?.id;
+        const itemsToSave = r.items.map((it, idx) => ({
+          receipt_id: rid, payment_date: it.payDate, item_type: it.itemType, 
+          amount: it.amt, quantity: 1, note: it.note||null, sort_order: idx
+        }));
+        await sb('award_receipt_items',{method:'POST',body:JSON.stringify(itemsToSave)});
+      } else {
+        const tableName = type==='golf'?'golf_receipts':'training_receipts';
+        const itemsJson = JSON.stringify(r.items.map(it => ({
+          date: it.payDate, amount: it.amt, note: it.note||''
+        })));
+        
+        const rec = {
+          serial_number: serial, issue_date: r.maxDate, payer_name: r.name,
+          payer_reg_no: r.reg||null, payer_address: r.addr||null, payment_date: r.maxDate,
+          amount: r.totalAmount, note: '[JSON]' + itemsJson
+        };
+        await sb(tableName,{method:'POST',body:JSON.stringify(rec)});
+      }
+    }
+    
+    alert(`🎉 총 ${results.length}건의 업체 영수증 일괄 발행이 완료되었습니다!`);
+    
+    if(type==='golf') resetGolf();
+    if(type==='award') resetAward();
+    if(type==='train') resetTrain();
+    
+    swList(type);
+    goPage('pgHome');
+    
+  } catch(e) {
+    if(errEl) errEl.textContent = '일괄 발행 오류: ' + e.message;
+    btn.disabled = false;
+    btn.textContent = `🚀 ${results.length}업체 영수증 일괄 발행하기`;
+  }
 }
 
 function applyPaste(type, results) {
@@ -1202,7 +1293,17 @@ function renderCanvas(d, title, type) {
     y=drawAwardTbl(ctx, d.items||[], ML, y, CW)
   } else {
     const detail=type==='golf'?'골프대회 참가비':'대표자 연수 참가비'
-    y=drawPayTbl(ctx,[{date:d.payment_date,detail,amount:d.amount,note:d.note||''}],d.amount,ML,y,CW)
+    let items = [];
+    if(d.note && d.note.startsWith('[JSON]')) {
+      try {
+        items = JSON.parse(d.note.slice(6)).map(it => ({date:it.date, detail, amount:it.amount, note:it.note||''}));
+      } catch(e) {
+        items = [{date:d.payment_date,detail,amount:d.amount,note:d.note||''}];
+      }
+    } else {
+      items = [{date:d.payment_date,detail,amount:d.amount,note:d.note||''}];
+    }
+    y=drawPayTbl(ctx,items,d.amount,ML,y,CW)
   }
 
   y+=28
@@ -1260,11 +1361,12 @@ function drawPayTbl(ctx,rows,total,x,y,cw) {
   y+=rh
   rows.forEach(r=>{
     cx=x
-    const cells=[r.date,r.detail,Number(r.amount).toLocaleString(),r.note]
+    const cells=[r.date,r.detail,fmtMoney(r.amount),r.note]
     cells.forEach((cell,ci)=>{
       ctx.strokeStyle='#ccc'; ctx.lineWidth=1; ctx.strokeRect(cx,y,cols[ci],rh)
       ctx.fillStyle='#fff'; ctx.fillRect(cx+.5,y+.5,cols[ci]-1,rh-1)
-      ctx.font='500 16px "Noto Sans KR"'; ctx.fillStyle='#1A1916'
+      ctx.font='500 16px "Noto Sans KR"'
+      ctx.fillStyle=ci===2&&r.amount<0?'#C0392B':'#1A1916'
       ctx.textAlign=ci===2?'right':'center'
       ctx.fillText(cell||'',ci===2?cx+cols[ci]-7:cx+cols[ci]/2,y+25); cx+=cols[ci]
     }); y+=rh
