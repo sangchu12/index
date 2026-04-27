@@ -170,11 +170,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--txt)
     </div>
     <div id="userPanel">
       <div class="fl">
-        <label>사업자등록번호</label>
-        <input class="fi" id="loginReg" placeholder="000-00-00000" oninput="fmtReg(this)" onkeydown="if(event.key==='Enter')userLogin()">
+        <label>사업자번호 또는 회사명</label>
+        <input class="fi" id="loginReg" placeholder="사업자번호(숫자) 또는 회사명 입력" onkeydown="if(event.key==='Enter')userLogin()">
       </div>
       <button class="btn" onclick="userLogin()">영수증 조회</button>
-      <p style="font-size:12px;color:var(--sub);margin-top:10px;text-align:center">조회 안 되면 회사명으로도 검색 가능합니다</p>
     </div>
     <div id="adminPanel" style="display:none">
       <div class="fl">
@@ -190,7 +189,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--txt)
 <!-- 메인 앱 -->
 <div id="mainApp">
   <div class="topbar">
-    <div class="topbar-logo">KODA · EVENT INVOICE</div>
+    <div class="topbar-logo">KODA · GOLF INVOICE</div>
     <div class="topbar-r">
       <span class="mode-badge" id="modeBadge">USER</span>
       <button class="logout-btn" onclick="logout()">로그아웃</button>
@@ -204,30 +203,15 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--txt)
       <!-- 어드민 홈 -->
       <div id="adminHome">
         <div class="home-hd">
-          <h1>영수증 발행</h1>
-          <p>발행할 영수증 종류를 선택하세요</p>
+          <h1>영수증 발행 관리</h1>
+          <p>골프대회 참가비 영수증 리스트 및 발행</p>
         </div>
-        <div class="card-grid">
+        <div class="card-grid" style="grid-template-columns:1fr">
           <div class="type-card golf" onclick="goPage('pgGolf')">
             <div class="card-icon">⛳</div>
-            <div class="card-name">골프대회 참가비</div>
-            <div class="card-desc">협회장배 골프대회 참가비 영수증</div>
+            <div class="card-name">+ 골프대회 영수증 새로 발행하기</div>
+            <div class="card-desc">엑셀 데이터를 붙여넣어 일괄 발행합니다.</div>
           </div>
-          <div class="type-card award" onclick="goPage('pgAward')">
-            <div class="card-icon">🏆</div>
-            <div class="card-name">디지털 광고 대상</div>
-            <div class="card-desc">출품비 · 추가트로피 · 협찬금 · 환불금</div>
-          </div>
-          <div class="type-card train" onclick="goPage('pgTrain')">
-            <div class="card-icon">📋</div>
-            <div class="card-name">대표자 연수</div>
-            <div class="card-desc">대표자 연수 참가비 영수증</div>
-          </div>
-        </div>
-        <div class="nav-tabs">
-          <button class="nav-tab active" onclick="swList('golf')">⛳ 골프대회</button>
-          <button class="nav-tab" onclick="swList('award')">🏆 광고대상</button>
-          <button class="nav-tab" onclick="swList('train')">📋 대표자연수</button>
         </div>
         <div class="list-bar">
           <input id="listSearch" placeholder="법인명 또는 일렬번호 검색" onkeydown="if(event.key==='Enter')loadList()">
@@ -238,16 +222,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--txt)
 
       <!-- 사용자 홈 -->
       <div id="userHome" style="display:none">
-        <div class="home-hd"><h1>영수증 조회</h1><p>발급된 영수증을 조회하고 PDF로 다운로드하세요</p></div>
+        <div class="home-hd"><h1>영수증 조회</h1><p>발급된 골프대회 영수증을 조회하고 PDF로 다운로드하세요</p></div>
         <div class="search-box">
           <div style="font-size:15px;font-weight:700;margin-bottom:16px">🔍 영수증 검색</div>
           <div class="search-row">
-            <input class="search-inp" id="uRegInput" placeholder="사업자등록번호 (예: 220-88-03176)" oninput="fmtReg(this)" onkeydown="if(event.key==='Enter')uSearch()">
+            <input class="search-inp" id="uSearchInput" placeholder="사업자번호(숫자) 또는 회사명 입력" onkeydown="if(event.key==='Enter')uSearch()">
             <button class="search-btn" onclick="uSearch()">조회</button>
-          </div>
-          <div class="search-row">
-            <input class="search-inp" id="uNameInput" placeholder="회사명으로 검색" onkeydown="if(event.key==='Enter')uSearchName()">
-            <button class="search-btn" onclick="uSearchName()">회사명 검색</button>
           </div>
         </div>
         <div id="uResult"></div>
@@ -258,13 +238,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--txt)
     <div id="pgGolf" class="page">
       <div class="page-hd">
         <button class="back-btn" onclick="goPage('pgHome')">← 홈</button>
-        <h2 class="page-title">골프대회 참가비 영수증</h2>
-        <span class="pill pill-golf">GOLF</span>
+        <h2 class="page-title">골프대회 참가비 영수증 발행</h2>
       </div>
       <div id="golfWrap">
         <!-- 붙여넣기 섹션 -->
         <div class="sec">
-          <div class="sec-label">📋 엑셀 붙여넣기 (빠른 입력)</div>
+          <div class="sec-label">📋 엑셀 붙여넣기 (빠른 일괄 발행)</div>
           <p class="paste-hint">기존 로우 데이터를 <strong>헤더 포함</strong> 그대로 복사해서 붙여넣으세요. G열(회사명) 기준으로 회원사를 자동 매칭합니다.</p>
           <div class="paste-cols">
             <span class="paste-col">A: NO</span>
@@ -283,79 +262,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--txt)
           </div>
           <div id="golfPasteResult" style="margin-top:10px"></div>
         </div>
-
-
       </div>
       <div id="golfSuc" style="display:none"></div>
-    </div>
-
-    <!-- ③ 광고대상 발행 -->
-    <div id="pgAward" class="page">
-      <div class="page-hd">
-        <button class="back-btn" onclick="goPage('pgHome')">← 홈</button>
-        <h2 class="page-title">디지털 광고 대상 영수증</h2>
-        <span class="pill pill-award">AWARD</span>
-      </div>
-      <div id="awardWrap">
-        <!-- 붙여넣기 -->
-        <div class="sec">
-          <div class="sec-label">📋 엑셀 붙여넣기 (빠른 입력)</div>
-          <p class="paste-hint">기존 로우 데이터를 <strong>헤더 포함</strong> 그대로 복사해서 붙여넣으세요. G열(회사명) 기준으로 회원사를 자동 매칭합니다.</p>
-          <div class="paste-cols">
-            <span class="paste-col">A: NO</span>
-            <span class="paste-col">B: 년도</span>
-            <span class="paste-col">C: 거래일시</span>
-            <span class="paste-col">D: 입금액</span>
-            <span class="paste-col">E: 출금액</span>
-            <span class="paste-col">F: 내용</span>
-            <span class="paste-col">I: 회사명 (매칭 기준)</span>
-            <span class="paste-col">K: 비고</span>
-          </div>
-          <textarea class="ptxt" id="awardPasteTxt" placeholder="NO	일렬번호	거래일시	번호	입금액	입금자명	회사명&#10;1	251013-01	2025-10-13	1	200,000	가치브라더	주식회사 가치브라더"></textarea>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button class="btn" style="background:var(--award)" onclick="parsePaste('award')">🔍 내용 불러오기</button>
-            <button class="btn" style="background:var(--sub);width:auto;padding:10px 16px" onclick="document.getElementById('awardPasteTxt').value=''">초기화</button>
-          </div>
-          <div id="awardPasteResult" style="margin-top:10px"></div>
-        </div>
-
-
-      </div>
-      <div id="awardSuc" style="display:none"></div>
-    </div>
-
-    <!-- ④ 대표자연수 발행 -->
-    <div id="pgTrain" class="page">
-      <div class="page-hd">
-        <button class="back-btn" onclick="goPage('pgHome')">← 홈</button>
-        <h2 class="page-title">대표자 연수 참가비 영수증</h2>
-        <span class="pill pill-train">TRAINING</span>
-      </div>
-      <div id="trainWrap">
-        <div class="sec">
-          <div class="sec-label">📋 엑셀 붙여넣기 (빠른 입력)</div>
-          <p class="paste-hint">기존 로우 데이터를 <strong>헤더 포함</strong> 그대로 복사해서 붙여넣으세요. G열(회사명) 기준으로 회원사를 자동 매칭합니다.</p>
-          <div class="paste-cols">
-            <span class="paste-col">A: NO</span>
-            <span class="paste-col">B: 년도</span>
-            <span class="paste-col">C: 거래일시</span>
-            <span class="paste-col">D: 입금액</span>
-            <span class="paste-col">E: 출금액</span>
-            <span class="paste-col">F: 내용</span>
-            <span class="paste-col">I: 회사명 (매칭 기준)</span>
-            <span class="paste-col">K: 비고</span>
-          </div>
-          <textarea class="ptxt" id="trainPasteTxt" placeholder="NO	일렬번호	거래일시	번호	입금액	입금자명	회사명&#10;1	250101-01	2025-01-01	1	300,000	회사명	법인명"></textarea>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button class="btn" style="background:var(--train)" onclick="parsePaste('train')">🔍 내용 불러오기</button>
-            <button class="btn" style="background:var(--sub);width:auto;padding:10px 16px" onclick="document.getElementById('trainPasteTxt').value=''">초기화</button>
-          </div>
-          <div id="trainPasteResult" style="margin-top:10px"></div>
-        </div>
-
-
-      </div>
-      <div id="trainSuc" style="display:none"></div>
     </div>
 
   </div>
@@ -698,16 +606,7 @@ function parsePaste(type) {
     const reg = member ? member.reg : '';
     const addr = member ? member.addr : '';
 
-    if(type==='golf'||type==='train') {
-      rawResults.push({name, reg, addr, payDate, amt, note, matched:!!member, nameRaw})
-    } else {
-      let itemType = '출품비'
-      if(note.includes('협찬') || content.includes('협찬')) itemType = '협찬금'
-      else if(note.includes('트로피') || content.includes('트로피')) itemType = '추가트로피'
-      else if(amt < 0) itemType = '환불금'
-
-      rawResults.push({name, reg, addr, payDate, itemType, amt, note, matched:!!member, nameRaw})
-    }
+    rawResults.push({name, reg, addr, payDate, amt, note, matched:!!member, nameRaw});
   })
 
   if(!rawResults.length) {
@@ -773,48 +672,28 @@ async function bulkIssue(type) {
       const r = results[i];
       btn.textContent = `🚀 발행 중... (${i+1}/${results.length})`;
       
-      const sType = type==='golf'?'golf':type==='award'?'award':'training';
-      const ns = await nextSerial(sType, dateSerial(r.maxDate), currentSeq);
+      const ns = await nextSerial('golf', dateSerial(r.maxDate), currentSeq);
       currentSeq = ns.newSeq + 1;
       const serial = ns.serial;
       
-      if(type==='award') {
-        const header = {
-          serial_number: serial, issue_date: r.maxDate, payer_name: r.name,
-          payer_reg_no: r.reg||null, payer_address: r.addr||null, total_amount: r.totalAmount
-        };
-        const saved = await sb('award_receipts',{method:'POST',body:JSON.stringify(header)});
-        if(saved && saved.message) throw new Error(saved.message); // Supabase 에러 감지
-        const rid = saved?.[0]?.id;
-        const itemsToSave = r.items.map((it, idx) => ({
-          receipt_id: rid, payment_date: it.payDate, item_type: it.itemType, 
-          amount: it.amt, quantity: 1, note: it.note||null, sort_order: idx
-        }));
-        const savedItems = await sb('award_receipt_items',{method:'POST',body:JSON.stringify(itemsToSave)});
-        if(savedItems && savedItems.message) throw new Error(savedItems.message);
-      } else {
-        const tableName = type==='golf'?'golf_receipts':'training_receipts';
-        const itemsJson = JSON.stringify(r.items.map(it => ({
-          date: it.payDate, amount: it.amt, note: it.note||''
-        })));
-        
-        const rec = {
-          serial_number: serial, issue_date: r.maxDate, payer_name: r.name,
-          payer_reg_no: r.reg||null, payer_address: r.addr||null, payment_date: r.maxDate,
-          amount: r.totalAmount, note: '[JSON]' + itemsJson
-        };
-        const saved = await sb(tableName,{method:'POST',body:JSON.stringify(rec)});
-        if(saved && saved.message) throw new Error(saved.message);
-      }
+      const itemsJson = JSON.stringify(r.items.map(it => ({
+        date: it.payDate, amount: it.amt, note: it.note||''
+      })));
+      
+      const rec = {
+        serial_number: serial, issue_date: r.maxDate, payer_name: r.name,
+        payer_reg_no: r.reg||null, payer_address: r.addr||null, payment_date: r.maxDate,
+        amount: r.totalAmount, note: '[JSON]' + itemsJson
+      };
+      const saved = await sb('golf_receipts',{method:'POST',body:JSON.stringify(rec)});
+      if(saved && saved.message) throw new Error(saved.message);
     }
     
     alert(`🎉 총 ${results.length}업체 영수증 일괄 발행이 완료되었습니다!`);
     
-    if(type==='golf') resetGolf();
-    if(type==='award') resetAward();
-    if(type==='train') resetTrain();
+    resetGolf();
     
-    swList(type);
+    loadList();
     goPage('pgHome');
     
   } catch(e) {
@@ -827,61 +706,11 @@ async function bulkIssue(type) {
   }
 }
 
-function applyPaste(type, results) {
-  if(type==='golf') {
-    const r=results[0]
-    document.getElementById('golfName').value=r.name
-    document.getElementById('golfReg').value=r.reg
-    document.getElementById('golfAddr').value=r.addr
-    document.getElementById('golfPayDate').value=r.payDate
-    const amtEl=document.getElementById('golfAmt')
-    amtEl.dataset.raw=String(r.amt)
-    amtEl.value=r.amt.toLocaleString()
-    document.getElementById('golfNote').value=r.note||''
-    document.getElementById('golfPasteResult').innerHTML='<div style="color:var(--ok);font-size:13px;margin-top:6px">✅ 폼에 적용되었습니다. 내용을 확인하고 발행하세요.</div>'
-  } else if(type==='train') {
-    const r=results[0]
-    document.getElementById('trainName').value=r.name
-    document.getElementById('trainReg').value=r.reg
-    document.getElementById('trainAddr').value=r.addr
-    document.getElementById('trainPayDate').value=r.payDate
-    const amtEl=document.getElementById('trainAmt')
-    amtEl.dataset.raw=String(r.amt)
-    amtEl.value=r.amt.toLocaleString()
-    document.getElementById('trainNote').value=r.note||''
-    document.getElementById('trainPasteResult').innerHTML='<div style="color:var(--ok);font-size:13px;margin-top:6px">✅ 폼에 적용되었습니다. 내용을 확인하고 발행하세요.</div>'
-  } else {
-    // 광고대상: 같은 법인 여러 항목 처리
-    if(!results.length) return
-    const first=results[0]
-    document.getElementById('awardName').value=first.name
-    document.getElementById('awardReg').value=first.reg
-    document.getElementById('awardAddr').value=first.addr
-
-    // 항목 전체 교체
-    aItems=[]
-    document.getElementById('awardItems').innerHTML=''
-    results.forEach(r=>{
-      addItem(r.payDate, r.itemType, r.amt, r.note)
-    })
-    calcTotal()
-    document.getElementById('awardPasteResult').innerHTML='<div style="color:var(--ok);font-size:13px;margin-top:6px">✅ 폼에 적용되었습니다. 내용을 확인하고 발행하세요.</div>'
-  }
-}
-
 // ── 페이지 전환 ───────────────────────────────
 function goPage(id) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
   document.getElementById(id).classList.add('active')
   if(id==='pgGolf') resetGolf()
-  if(id==='pgAward') resetAward()
-  if(id==='pgTrain') resetTrain()
-}
-
-function swList(tab) {
-  listTab=tab
-  document.querySelectorAll('.nav-tab').forEach((b,i)=>b.classList.toggle('active',['golf','award','train'][i]===tab))
-  loadList()
 }
 
 // ── Supabase ──────────────────────────────────
@@ -927,175 +756,7 @@ function resetGolf() {
   document.getElementById('golfSuc').style.display='none'
 }
 
-async function submitGolf() {
-  const name=document.getElementById('golfName').value.trim()
-  const issueDate=document.getElementById('golfIssueDate').value
-  const payDate=document.getElementById('golfPayDate').value
-  const amt=parseAmt(document.getElementById('golfAmt'))
-  const err=document.getElementById('golfErr')
-  if(!name){err.textContent='법인명을 입력하세요';return}
-  if(!amt){err.textContent='금액을 입력하세요';return}
-  err.textContent=''
-  const btn=document.querySelector('#pgGolf .sub-btn')
-  btn.disabled=true; btn.textContent='발행 중...'
-  try {
-    const serial=await nextSerial('golf',dateSerial(issueDate))
-    const rec={serial_number:serial,issue_date:issueDate,payer_name:name,payer_reg_no:document.getElementById('golfReg').value||null,payer_address:document.getElementById('golfAddr').value||null,payment_date:payDate,amount:amt,note:document.getElementById('golfNote').value||null}
-    const saved=await sb('golf_receipts',{method:'POST',body:JSON.stringify(rec)})
-    lastData={type:'golf',...rec,id:saved?.[0]?.id}
-    showSuc('golf',serial)
-  } catch(e){err.textContent='오류: '+e.message}
-  finally{btn.disabled=false;btn.textContent='영수증 발행'}
-}
-
-// ── 광고대상 ──────────────────────────────────
-const ITEM_TYPES=['출품비','추가트로피','협찬금','환불금']
-
-function resetAward() {
-  ;['awardName','awardReg','awardAddr'].forEach(id=>document.getElementById(id).value='')
-  document.getElementById('awardIssueDate').value=today()
-  document.getElementById('awardErr').textContent=''
-  document.getElementById('awardPasteTxt').value=''
-  document.getElementById('awardPasteResult').innerHTML=''
-  document.getElementById('awardWrap').style.display='block'
-  document.getElementById('awardSuc').style.display='none'
-  aItems=[]; document.getElementById('awardItems').innerHTML=''; addItem()
-}
-
-function addItem(payDate, itemType, amt, note) {
-  const id=Date.now()+Math.random()
-  aItems.push(id)
-  const div=document.createElement('div')
-  div.className='item-block'; div.id='ai_'+id
-  div.innerHTML=`
-    <div class="item-hd">
-      <span class="item-num">항목 ${aItems.length}</span>
-      <button class="rm-btn" onclick="removeItem(${id})">✕ 삭제</button>
-    </div>
-    <div class="row3">
-      <div class="fl"><label>납부일 *</label><input class="fi" type="date" id="ad_${id}" value="${payDate||today()}" onchange="calcTotal()"></div>
-      <div class="fl"><label>구분 *</label>
-        <select class="fi" id="at_${id}" onchange="calcTotal()">
-          ${ITEM_TYPES.map(t=>`<option${t===(itemType||'출품비')?' selected':''}>${t}</option>`).join('')}
-        </select>
-      </div>
-      <div class="fl"><label>금액 (원) *</label><input class="fi" id="aa_${id}" value="${amt?Number(amt).toLocaleString():''}" oninput="fmtAmt(this);calcTotal()" style="text-align:right" data-raw="${amt||''}"></div>
-    </div>
-    <div class="fl"><label>비고</label><input class="fi" id="an_${id}" value="${note||''}"></div>
-    <div id="refHint_${id}" style="display:${itemType==='환불금'?'block':'none'};font-size:12px;color:var(--danger);margin-top:4px">→ 음수(환불)로 저장됩니다</div>`
-  document.getElementById('awardItems').appendChild(div)
-  updateItemNums(); calcTotal()
-}
-
-function removeItem(id) {
-  if(aItems.length<=1) return
-  aItems=aItems.filter(i=>i!==id)
-  document.getElementById('ai_'+id).remove()
-  updateItemNums(); calcTotal()
-}
-
-function updateItemNums() {
-  aItems.forEach((id,i)=>{
-    const el=document.querySelector('#ai_'+id+' .item-num')
-    if(el) el.textContent='항목 '+(i+1)
-  })
-}
-
-function calcTotal() {
-  let t=0
-  aItems.forEach(id=>{
-    const type=document.getElementById('at_'+id)?.value
-    const amtEl=document.getElementById('aa_'+id)
-    const amt=parseAmt(amtEl)
-    const hint=document.getElementById('refHint_'+id)
-    if(hint) hint.style.display=type==='환불금'?'block':'none'
-    t+=type==='환불금'?-amt:amt
-  })
-  const el=document.getElementById('awardTotal')
-  el.textContent=fmtMoney(t)+' 원'
-  el.style.color=t<0?'var(--danger)':'var(--txt)'
-}
-
-async function submitAward() {
-  const name=document.getElementById('awardName').value.trim()
-  const issueDate=document.getElementById('awardIssueDate').value
-  const err=document.getElementById('awardErr')
-  if(!name){err.textContent='법인명을 입력하세요';return}
-  const items=[]
-  for(const id of aItems){
-    const type=document.getElementById('at_'+id)?.value
-    const amt=parseAmt(document.getElementById('aa_'+id))
-    if(!amt){err.textContent='모든 항목의 금액을 입력하세요';return}
-    items.push({payment_date:document.getElementById('ad_'+id).value,item_type:type,amount:type==='환불금'?-amt:amt,quantity:1,unit_price:null,note:document.getElementById('an_'+id).value||null,sort_order:items.length})
-  }
-  err.textContent=''
-  const btn=document.querySelector('#pgAward .sub-btn')
-  btn.disabled=true; btn.textContent='발행 중...'
-  try {
-    const serial=await nextSerial('award',dateSerial(issueDate))
-    const total=items.reduce((s,it)=>s+it.amount,0)
-    const header={serial_number:serial,issue_date:issueDate,payer_name:name,payer_reg_no:document.getElementById('awardReg').value||null,payer_address:document.getElementById('awardAddr').value||null,total_amount:total}
-    const saved=await sb('award_receipts',{method:'POST',body:JSON.stringify(header)})
-    const rid=saved?.[0]?.id
-    await sb('award_receipt_items',{method:'POST',body:JSON.stringify(items.map(it=>{return{...it,receipt_id:rid}}))})
-    lastData={type:'award',...header,items,id:rid}
-    showSuc('award',serial)
-  } catch(e){err.textContent='오류: '+e.message}
-  finally{btn.disabled=false;btn.textContent='영수증 발행'}
-}
-
-// ── 대표자연수 ────────────────────────────────
-function resetTrain() {
-  ;['trainName','trainReg','trainAddr','trainNote'].forEach(id=>document.getElementById(id).value='')
-  const a=document.getElementById('trainAmt'); a.value=''; a.dataset.raw=''
-  document.getElementById('trainIssueDate').value=today()
-  document.getElementById('trainPayDate').value=today()
-  document.getElementById('trainErr').textContent=''
-  document.getElementById('trainPasteTxt').value=''
-  document.getElementById('trainPasteResult').innerHTML=''
-  document.getElementById('trainWrap').style.display='block'
-  document.getElementById('trainSuc').style.display='none'
-}
-
-async function submitTrain() {
-  const name=document.getElementById('trainName').value.trim()
-  const issueDate=document.getElementById('trainIssueDate').value
-  const payDate=document.getElementById('trainPayDate').value
-  const amt=parseAmt(document.getElementById('trainAmt'))
-  const err=document.getElementById('trainErr')
-  if(!name){err.textContent='법인명을 입력하세요';return}
-  if(!amt){err.textContent='금액을 입력하세요';return}
-  err.textContent=''
-  const btn=document.querySelector('#pgTrain .sub-btn')
-  btn.disabled=true; btn.textContent='발행 중...'
-  try {
-    const serial=await nextSerial('training',dateSerial(issueDate))
-    const rec={serial_number:serial,issue_date:issueDate,payer_name:name,payer_reg_no:document.getElementById('trainReg').value||null,payer_address:document.getElementById('trainAddr').value||null,payment_date:payDate,amount:amt,note:document.getElementById('trainNote').value||null}
-    const saved=await sb('training_receipts',{method:'POST',body:JSON.stringify(rec)})
-    lastData={type:'train',...rec,id:saved?.[0]?.id}
-    showSuc('train',serial)
-  } catch(e){err.textContent='오류: '+e.message}
-  finally{btn.disabled=false;btn.textContent='영수증 발행'}
-}
-
-// ── 발행 완료 ─────────────────────────────────
-function showSuc(type, serial) {
-  const wrapId=type==='golf'?'golfWrap':type==='award'?'awardWrap':'trainWrap'
-  const sucId=type==='golf'?'golfSuc':type==='award'?'awardSuc':'trainSuc'
-  document.getElementById(wrapId).style.display='none'
-  document.getElementById(sucId).style.display='block'
-  document.getElementById(sucId).innerHTML=`
-    <div class="success-box">
-      <div class="suc-icon">✅</div>
-      <h2 class="suc-title">영수증이 발행되었습니다</h2>
-      <div class="serial-disp">${serial}</div>
-      <div class="suc-acts">
-        <button class="dl-btn ${type}" onclick="genPDF('${type}')">📄 PDF 다운로드</button>
-        <button class="new-btn" onclick="goPage('pg${type==='golf'?'Golf':type==='award'?'Award':'Train'}')">+ 새 영수증 발행</button>
-        <button class="new-btn" onclick="goPage('pgHome')">← 홈으로</button>
-      </div>
-    </div>`
-}
+/* Removed dead code */
 
 // ── 목록 ──────────────────────────────────────
 async function loadList() {
@@ -1103,99 +764,60 @@ async function loadList() {
   const wrap=document.getElementById('listWrap')
   wrap.innerHTML='<div class="empty">불러오는 중...</div>'
   try {
-    let url, data
-    if(listTab==='golf') {
-      url=`golf_receipts?select=*&order=created_at.desc&limit=50`+(q?`&or=(payer_name.ilike.*${q}*,serial_number.ilike.*${q}*)`:'')
-      data=await sb(url)||[]
-      wrap.innerHTML=data.length?renderGolfTbl(data):'<div class="empty">데이터가 없습니다</div>'
-    } else if(listTab==='award') {
-      url=`award_receipts?select=*&order=created_at.desc&limit=50`+(q?`&or=(payer_name.ilike.*${q}*,serial_number.ilike.*${q}*)`:'')
-      data=await sb(url)||[]
-      wrap.innerHTML=data.length?renderAwardTbl(data):'<div class="empty">데이터가 없습니다</div>'
-    } else {
-      url=`training_receipts?select=*&order=created_at.desc&limit=50`+(q?`&or=(payer_name.ilike.*${q}*,serial_number.ilike.*${q}*)`:'')
-      data=await sb(url)||[]
-      wrap.innerHTML=data.length?renderTrainTbl(data):'<div class="empty">데이터가 없습니다</div>'
-    }
+    const url=`golf_receipts?select=*&order=created_at.desc&limit=50`+(q?`&or=(payer_name.ilike.*${q}*,serial_number.ilike.*${q}*)`:'')
+    const data=await sb(url)||[]
+    wrap.innerHTML=data.length?renderGolfTbl(data):'<div class="empty">데이터가 없습니다</div>'
   } catch(e) { wrap.innerHTML=`<div class="empty">오류: ${e.message}</div>` }
 }
 
 function renderGolfTbl(rows) {
   return `<table class="rtbl"><thead><tr><th>일렬번호</th><th>발행일</th><th>법인명</th><th>사업자번호</th><th style="text-align:right">금액</th><th>비고</th><th>PDF</th></tr></thead><tbody>
-  ${rows.map(r=>`<tr><td><span class="sc">${r.serial_number}</span></td><td>${fmtDate(r.issue_date)}</td><td>${r.payer_name}</td><td style="color:var(--sub);font-size:12px">${r.payer_reg_no||'-'}</td><td style="text-align:right;font-weight:600">${Number(r.amount).toLocaleString()}원</td><td style="color:var(--sub)">${r.note||'-'}</td><td><button class="pdf-btn" onclick="dlFromDB('golf',${r.id})">📄</button></td></tr>`).join('')}</tbody></table>`
-}
-
-function renderAwardTbl(rows) {
-  return `<table class="rtbl"><thead><tr><th>일렬번호</th><th>발행일</th><th>법인명</th><th>사업자번호</th><th style="text-align:right">총액</th><th>PDF</th></tr></thead><tbody>
-  ${rows.map(r=>{const neg=Number(r.total_amount)<0; return `<tr><td><span class="sc">${r.serial_number}</span></td><td>${fmtDate(r.issue_date)}</td><td>${r.payer_name}</td><td style="color:var(--sub);font-size:12px">${r.payer_reg_no||'-'}</td><td style="text-align:right;font-weight:600;color:${neg?'var(--danger)':'inherit'}">${fmtMoney(r.total_amount)}원</td><td><button class="pdf-btn" onclick="dlFromDB('award',${r.id})">📄</button></td></tr>`}).join('')}</tbody></table>`
-}
-
-function renderTrainTbl(rows) {
-  return `<table class="rtbl"><thead><tr><th>일렬번호</th><th>발행일</th><th>법인명</th><th>사업자번호</th><th style="text-align:right">금액</th><th>비고</th><th>PDF</th></tr></thead><tbody>
-  ${rows.map(r=>`<tr><td><span class="sc">${r.serial_number}</span></td><td>${fmtDate(r.issue_date)}</td><td>${r.payer_name}</td><td style="color:var(--sub);font-size:12px">${r.payer_reg_no||'-'}</td><td style="text-align:right;font-weight:600">${Number(r.amount).toLocaleString()}원</td><td style="color:var(--sub)">${r.note||'-'}</td><td><button class="pdf-btn" onclick="dlFromDB('train',${r.id})">📄</button></td></tr>`).join('')}</tbody></table>`
+  ${rows.map(r=>`<tr><td><span class="sc">${r.serial_number}</span></td><td>${fmtDate(r.issue_date)}</td><td>${r.payer_name}</td><td style="color:var(--sub);font-size:12px">${r.payer_reg_no||'-'}</td><td style="text-align:right;font-weight:600">${Number(r.amount).toLocaleString()}원</td><td style="color:var(--sub)">${r.note||'-'}</td><td><button class="pdf-btn" onclick="dlFromDB(${r.id})">📄</button></td></tr>`).join('')}</tbody></table>`
 }
 
 // ── 사용자 조회 ───────────────────────────────
 async function uSearch() {
-  const reg=document.getElementById('uRegInput').value.replace(/-/g,'').trim()
-  if(!reg) return
-  const fmt=reg.slice(0,3)+'-'+reg.slice(3,5)+'-'+reg.slice(5)
-  await searchReceipts('payer_reg_no=eq.'+fmt)
-}
-
-async function uSearchName() {
-  const name=document.getElementById('uNameInput').value.trim()
-  if(!name) return
-  await searchReceipts('payer_name=ilike.*'+name+'*')
+  const input=document.getElementById('uSearchInput').value.trim()
+  if(!input) return
+  const isReg = /^[\d-]+$/.test(input)
+  if(isReg) {
+    const reg=input.replace(/-/g,'')
+    const fmt=reg.slice(0,3)+'-'+reg.slice(3,5)+'-'+reg.slice(5)
+    await searchReceipts('payer_reg_no=eq.'+fmt)
+  } else {
+    await searchReceipts('payer_name=ilike.*'+input+'*')
+  }
 }
 
 async function searchReceipts(filter) {
   const wrap=document.getElementById('uResult')
   wrap.innerHTML='<div class="empty">조회 중...</div>'
   try {
-    const [g,a,t]=await Promise.all([
-      sb(`golf_receipts?${filter}&select=*&order=created_at.desc`),
-      sb(`award_receipts?${filter}&select=*&order=created_at.desc`),
-      sb(`training_receipts?${filter}&select=*&order=created_at.desc`),
-    ])
-    const all=[...(g||[]).map(r=>{return{...r,_t:'golf'}}),...(a||[]).map(r=>{return{...r,_t:'award'}}),...(t||[]).map(r=>{return{...r,_t:'train'}})]
-      .sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))
-    if(!all.length){wrap.innerHTML='<div class="empty">발급된 영수증이 없습니다<br><small style="display:block;margin-top:6px">회사명으로 다시 검색해보세요</small></div>';return}
-    const tl={golf:'⛳ 골프대회',award:'🏆 광고대상',train:'📋 대표자연수'}
-    const tc={golf:'var(--golf)',award:'var(--award)',train:'var(--train)'}
-    wrap.innerHTML=`<div style="font-size:13px;color:var(--sub);margin-bottom:10px">총 ${all.length}건의 영수증이 있습니다</div>
-    <table class="rtbl"><thead><tr><th>종류</th><th>일렬번호</th><th>발행일</th><th style="text-align:right">금액</th><th>PDF</th></tr></thead><tbody>
-    ${all.map(r=>{const amt=r._t==='award'?r.total_amount:r.amount;return `<tr><td><span style="font-size:12px;font-weight:700;color:${tc[r._t]}">${tl[r._t]}</span></td><td><span class="sc">${r.serial_number}</span></td><td>${fmtDate(r.issue_date)}</td><td style="text-align:right;font-weight:600;color:${Number(amt)<0?'var(--danger)':'inherit'}">${fmtMoney(amt)}원</td><td><button class="pdf-btn" onclick="dlFromDB('${r._t}',${r.id})">📄</button></td></tr>`}).join('')}</tbody></table>`
+    const data=await sb(`golf_receipts?${filter}&select=*&order=created_at.desc`) || []
+    if(!data.length){wrap.innerHTML='<div class="empty">발급된 영수증이 없습니다<br><small style="display:block;margin-top:6px">회사명으로 다시 검색해보세요</small></div>';return}
+    wrap.innerHTML=`<div style="font-size:13px;color:var(--sub);margin-bottom:10px">총 ${data.length}건의 영수증이 있습니다</div>
+    <table class="rtbl"><thead><tr><th>일렬번호</th><th>발행일</th><th>법인명</th><th style="text-align:right">금액</th><th>PDF</th></tr></thead><tbody>
+    ${data.map(r=>`<tr><td><span class="sc">${r.serial_number}</span></td><td>${fmtDate(r.issue_date)}</td><td>${r.payer_name}</td><td style="text-align:right;font-weight:600">${fmtMoney(r.amount)}원</td><td><button class="pdf-btn" onclick="dlFromDB(${r.id})">📄</button></td></tr>`).join('')}</tbody></table>`
   } catch(e){wrap.innerHTML=`<div class="empty">오류: ${e.message}</div>`}
 }
 
 // ── PDF 생성 ──────────────────────────────────
-async function dlFromDB(type, id) {
+async function dlFromDB(id) {
   try {
-    let data
-    if(type==='golf') {
-      const r=await sb(`golf_receipts?id=eq.${id}&select=*`); data={type:'golf',...r[0]}
-    } else if(type==='award') {
-      const r=await sb(`award_receipts?id=eq.${id}&select=*`)
-      const items=await sb(`award_receipt_items?receipt_id=eq.${id}&select=*&order=sort_order.asc`)
-      data={type:'award',...r[0],items}
-    } else {
-      const r=await sb(`training_receipts?id=eq.${id}&select=*`); data={type:'train',...r[0]}
-    }
-    genPDF(type, data)
+    const r=await sb(`golf_receipts?id=eq.${id}&select=*`)
+    genPDF(r[0])
   } catch(e) { alert('PDF 오류: '+e.message) }
 }
 
-function genPDF(type, data) {
+function genPDF(data) {
   const d=data||lastData
   if(!d) return
-  const titles={golf:'골프대회 참가비 영수증',award:'대한민국 디지털 광고 대상 영수증',train:'대표자 연수 참가비 영수증'}
-  renderCanvas(d, titles[type]||titles[d.type], type||d.type)
+  renderCanvas(d, '골프대회 참가비 영수증')
 }
 
 const ISSUER={name:'(사)한국디지털광고협회',reg:'215-82-13855',addr:'서울시 송파구 올림픽로 35길 137, 한국광고문화회관 10층'}
 
-function renderCanvas(d, title, type) {
+function renderCanvas(d, title) {
   const cv=document.createElement('canvas'); cv.width=794; cv.height=1123
   const ctx=cv.getContext('2d')
   ctx.fillStyle='#fff'; ctx.fillRect(0,0,794,1123)
@@ -1231,27 +853,21 @@ function renderCanvas(d, title, type) {
   ctx.font='bold 20px "Noto Sans KR"'; ctx.fillStyle='#1A1916'; ctx.textAlign='left'
   ctx.fillText('3. 납부내용', ML, y+16); y+=28
 
-  if(type==='award') {
-    y=drawAwardTbl(ctx, d.items||[], ML, y, CW)
-  } else {
-    const detail=type==='golf'?'골프대회 참가비':'대표자 연수 참가비'
-    let items = [];
-    if(d.note && d.note.startsWith('[JSON]')) {
-      try {
-        items = JSON.parse(d.note.slice(6)).map(it => ({date:it.date, detail, amount:it.amount, note:it.note||''}));
-      } catch(e) {
-        items = [{date:d.payment_date,detail,amount:d.amount,note:d.note||''}];
-      }
-    } else {
-      items = [{date:d.payment_date,detail,amount:d.amount,note:d.note||''}];
+  let items = [];
+  if(d.note && d.note.startsWith('[JSON]')) {
+    try {
+      items = JSON.parse(d.note.slice(6)).map(it => ({date:it.date, detail:'골프대회 참가비', amount:it.amount, note:it.note||''}));
+    } catch(e) {
+      items = [{date:d.payment_date,detail:'골프대회 참가비',amount:d.amount,note:d.note||''}];
     }
-    y=drawPayTbl(ctx,items,d.amount,ML,y,CW)
+  } else {
+    items = [{date:d.payment_date,detail:'골프대회 참가비',amount:d.amount,note:d.note||''}];
   }
+  y=drawPayTbl(ctx,items,d.amount,ML,y,CW)
 
   y+=28
-  const isRefund=type==='award'&&d.items?.every(it=>it.item_type==='환불금')
   ctx.font='bold 28px "Noto Sans KR"'; ctx.textAlign='center'
-  ctx.fillText(isRefund?'위와 같이 환불하였음을 확인합니다.':'위와 같이 영수하였음을 확인합니다.', 397, y)
+  ctx.fillText('위와 같이 영수하였음을 확인합니다.', 397, y)
   y+=36
   ctx.font='500 24px "Noto Sans KR"'
   ctx.fillText(dateKo(d.issue_date), 397, y)
@@ -1266,7 +882,7 @@ function renderCanvas(d, title, type) {
   const {jsPDF}=window.jspdf
   const pdf=new jsPDF({unit:'mm',format:'a4'})
   pdf.addImage(img,'PNG',0,0,210,297)
-  const fname=`KODA_${type==='golf'?'골프대회':type==='award'?'광고대상':'대표자연수'}_${d.payer_name}_${d.serial_number}.pdf`
+  const fname=`KODA_골프대회_${d.payer_name}_${d.serial_number}.pdf`
   pdf.save(fname)
 }
 
@@ -1323,38 +939,7 @@ function drawPayTbl(ctx,rows,total,x,y,cw) {
   }); ctx.textAlign='left'; return y+rh
 }
 
-function drawAwardTbl(ctx,items,x,y,cw) {
-  const rh=40, cols=[cw*.16,cw*.42,cw*.25,cw*.17]
-  const hdrs=['연월일','세부내용','금   액','비   고']
-  let cx=x
-  hdrs.forEach((h,ci)=>{
-    ctx.strokeStyle='#ccc'; ctx.lineWidth=1; ctx.strokeRect(cx,y,cols[ci],rh)
-    ctx.fillStyle='#F0F0F0'; ctx.fillRect(cx+.5,y+.5,cols[ci]-1,rh-1)
-    ctx.font='bold 17px "Noto Sans KR"'; ctx.fillStyle='#1A1916'; ctx.textAlign='center'
-    ctx.fillText(h,cx+cols[ci]/2,y+25); cx+=cols[ci]
-  }); y+=rh
-  let total=0
-  items.forEach(item=>{
-    total+=item.amount; cx=x
-    const cells=[item.payment_date,item.item_type,fmtMoney(item.amount),item.note||'']
-    cells.forEach((cell,ci)=>{
-      ctx.strokeStyle='#ccc'; ctx.lineWidth=1; ctx.strokeRect(cx,y,cols[ci],rh)
-      ctx.fillStyle='#fff'; ctx.fillRect(cx+.5,y+.5,cols[ci]-1,rh-1)
-      ctx.font='500 16px "Noto Sans KR"'
-      ctx.fillStyle=ci===2&&item.amount<0?'#C0392B':'#1A1916'
-      ctx.textAlign=ci===2?'right':'center'
-      ctx.fillText(cell||'',ci===2?cx+cols[ci]-7:cx+cols[ci]/2,y+25); cx+=cols[ci]
-    }); y+=rh
-  })
-  cx=x
-  ;['총   계','',fmtMoney(total),''].forEach((cell,ci)=>{
-    ctx.strokeStyle='#ccc'; ctx.lineWidth=1; ctx.strokeRect(cx,y,cols[ci],rh)
-    ctx.fillStyle='#F5F5F5'; ctx.fillRect(cx+.5,y+.5,cols[ci]-1,rh-1)
-    ctx.font='bold 17px "Noto Sans KR"'; ctx.fillStyle='#1A1916'
-    ctx.textAlign=ci===2?'right':'center'
-    ctx.fillText(cell,ci===2?cx+cols[ci]-7:cx+cols[ci]/2,y+25); cx+=cols[ci]
-  }); ctx.textAlign='left'; return y+rh
-}
+/* drawAwardTbl removed */
 </script>
 </body>
 </html>
