@@ -895,7 +895,11 @@ async function nextSerial(type, dateStr) {
   const c=rows?.[0]
   const newSeq=(c&&c.counter_date.replace(/-/g,'').slice(2)===dateStr)?c.last_seq+1:1
   const fullDate=`20${dateStr.slice(0,2)}-${dateStr.slice(2,4)}-${dateStr.slice(4,6)}`
-  await sb(`receipt_counters?receipt_type=eq.${type}`,{method:'PATCH',prefer:'return=minimal',body:JSON.stringify({counter_date:fullDate,last_seq:newSeq})})
+  if (c) {
+    await sb(`receipt_counters?receipt_type=eq.${type}`,{method:'PATCH',prefer:'return=minimal',body:JSON.stringify({counter_date:fullDate,last_seq:newSeq})})
+  } else {
+    await sb(`receipt_counters`,{method:'POST',prefer:'return=minimal',body:JSON.stringify({receipt_type:type, counter_date:fullDate,last_seq:newSeq})})
+  }
   return `KODA-${dateStr}-${String(newSeq).padStart(2,'0')}`
 }
 
