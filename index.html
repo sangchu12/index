@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KODA 행사 영수증 시스템</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap');
+:root {
+  --bg:#F5F4F0; --sur:#fff; --brd:#E0DDD6; --txt:#1A1916; --sub:#6B6860;
+  --golf:#2D5A1B; --golf-l:#EDF4E9;
+  --award:#1B3A5A; --award-l:#E9EFF4;
+  --train:#5A1B2D; --train-l:#F4E9ED;
+  --ok:#27AE60; --danger:#C0392B; --warn:#E67E22;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+
+/* 로그인 */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center}
+.login-box{background:var(--sur);border:1px solid var(--brd);width:420px;padding:48px}
+.login-logo{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.2em;color:var(--sub);margin-bottom:28px;text-transform:uppercase}
+.login-title{font-size:24px;font-weight:700;margin-bottom:6px}
+.login-sub{font-size:13px;color:var(--sub);margin-bottom:32px;line-height:1.6}
+.tab-row{display:flex;border-bottom:1px solid var(--brd);margin-bottom:24px}
+.tab-btn{flex:1;padding:10px;background:none;border:none;font-family:'Noto Sans KR',sans-serif;font-size:13px;color:var(--sub);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.tab-btn.active{color:var(--txt);font-weight:700;border-bottom-color:var(--txt)}
+.fl{margin-bottom:16px}
+.fl label{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sub);margin-bottom:6px}
+.fi{width:100%;padding:10px 13px;border:1px solid var(--brd);background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;color:var(--txt);outline:none;transition:border-color .15s}
+.fi:focus{border-color:var(--txt);background:#fff}
+.btn{width:100%;padding:13px;background:var(--txt);color:#fff;border:none;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.err{font-size:13px;color:var(--danger);margin-top:10px;text-align:center}
+
+/* 앱 */
+#mainApp{display:none;min-height:100vh}
+.topbar{background:var(--txt);color:#fff;padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between}
+.topbar-logo{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.15em}
+.topbar-r{display:flex;align-items:center;gap:16px}
+.mode-badge{font-size:10px;font-weight:700;letter-spacing:.1em;padding:3px 8px;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.7)}
+.logout-btn{background:none;border:none;color:rgba(255,255,255,.6);font-size:12px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.logout-btn:hover{color:#fff}
+.wrap{padding:28px 32px;max-width:900px;margin:0 auto}
+
+/* 탭 네비 */
+.page{display:none}.page.active{display:block}
+.nav-tabs{display:flex;gap:2px;margin-bottom:24px;border-bottom:1px solid var(--brd)}
+.nav-tab{padding:10px 18px;background:none;border:none;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:500;color:var(--sub);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.nav-tab.active{color:var(--txt);font-weight:700;border-bottom-color:var(--txt)}
+
+/* 홈 카드 */
+.home-hd{margin-bottom:32px}
+.home-hd h1{font-size:26px;font-weight:900;margin-bottom:4px}
+.home-hd p{font-size:13px;color:var(--sub)}
+.card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:32px}
+.type-card{background:var(--sur);border:1px solid var(--brd);padding:24px 20px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
+.type-card:hover{border-color:var(--txt);transform:translateY(-2px)}
+.type-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.type-card.golf::before{background:var(--golf)}
+.type-card.award::before{background:var(--award)}
+.type-card.train::before{background:var(--train)}
+.card-icon{font-size:26px;margin-bottom:12px}
+.card-name{font-size:14px;font-weight:700;margin-bottom:4px}
+.card-desc{font-size:12px;color:var(--sub);line-height:1.6}
+
+/* 공통 섹션 */
+.sec{background:var(--sur);border:1px solid var(--brd);padding:24px;margin-bottom:14px}
+.sec-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--sub);border-bottom:1px solid var(--brd);padding-bottom:8px;margin-bottom:18px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.row1{margin-bottom:14px}
+.page-hd{display:flex;align-items:center;gap:14px;margin-bottom:24px}
+.back-btn{background:none;border:1px solid var(--brd);padding:7px 14px;font-family:'Noto Sans KR',sans-serif;font-size:13px;cursor:pointer;color:var(--sub)}
+.back-btn:hover{border-color:var(--txt);color:var(--txt)}
+.page-title{font-size:20px;font-weight:900}
+.pill{font-size:10px;font-weight:700;letter-spacing:.08em;padding:4px 10px;border-radius:2px}
+.pill-golf{background:var(--golf-l);color:var(--golf)}
+.pill-award{background:var(--award-l);color:var(--award)}
+.pill-train{background:var(--train-l);color:var(--train)}
+.sub-btn{width:100%;padding:14px;border:none;font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:700;cursor:pointer;color:#fff;transition:opacity .15s}
+.sub-btn:disabled{opacity:.4;cursor:not-allowed}
+.sub-btn.golf{background:var(--golf)}
+.sub-btn.award{background:var(--award)}
+.sub-btn.train{background:var(--train)}
+.sub-btn.neutral{background:var(--txt)}
+
+/* 붙여넣기 UI */
+.paste-hint{font-size:12px;color:var(--sub);margin-bottom:8px;line-height:1.7}
+.paste-hint code{background:var(--bg);padding:1px 6px;border:1px solid var(--brd);font-family:'IBM Plex Mono',monospace;font-size:11px}
+.paste-cols{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.paste-col{font-size:11px;background:var(--bg);border:1px solid var(--brd);padding:3px 8px;font-family:'IBM Plex Mono',monospace}
+.ptxt{width:100%;min-height:90px;padding:10px 13px;border:1px solid var(--brd);font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--bg);resize:vertical;outline:none}
+.ptxt:focus{border-color:var(--txt)}
+.match-sum{font-size:13px;margin:10px 0 8px}
+.mlist{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto}
+.mi{padding:10px 14px;border:1px solid var(--brd);background:var(--bg);font-size:13px}
+.mi.ok{border-color:#a7d7a7;background:#f0faf0}
+.mi.no{border-color:#f5b7b1;background:#fdf3f2}
+.mi.warn{border-color:#f0c080;background:#fefaf0}
+.mi-name{font-weight:700;margin-bottom:3px}
+.mi-detail{font-size:12px;color:var(--sub)}
+.mi-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:2px;margin-right:5px}
+.ok-badge{background:var(--golf-l);color:var(--golf)}
+.no-badge{background:#fde;color:var(--danger)}
+.warn-badge{background:#fef3e2;color:var(--warn)}
+.apply-bar{margin-top:12px;display:flex;align-items:center;gap:12px}
+
+/* 다중항목 */
+.item-block{border:1px solid var(--brd);padding:16px;margin-bottom:10px;background:var(--bg)}
+.item-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.item-num{font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.06em}
+.rm-btn{background:none;border:1px solid #fca5a5;color:var(--danger);padding:3px 10px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.add-btn{width:100%;padding:10px;background:none;border:1px dashed var(--brd);font-family:'Noto Sans KR',sans-serif;font-size:13px;color:var(--sub);cursor:pointer;margin-top:4px;transition:all .15s}
+.add-btn:hover{border-color:var(--txt);color:var(--txt)}
+.total-prev{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--bg);border:1px solid var(--brd);margin-top:10px;font-weight:700;font-size:15px}
+
+/* 성공 */
+.success-box{background:var(--sur);border:1px solid var(--brd);padding:48px;text-align:center}
+.suc-icon{font-size:44px;margin-bottom:14px}
+.suc-title{font-size:20px;font-weight:900;margin-bottom:10px}
+.serial-disp{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;padding:8px 20px;background:var(--bg);border:1px solid var(--brd);margin-bottom:28px}
+.suc-acts{display:flex;flex-direction:column;gap:10px;align-items:center}
+.dl-btn{padding:13px 40px;border:none;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;cursor:pointer;color:#fff;width:100%;max-width:300px}
+.dl-btn.golf{background:var(--golf)}
+.dl-btn.award{background:var(--award)}
+.dl-btn.train{background:var(--train)}
+.new-btn{padding:12px 40px;background:var(--bg);border:1px solid var(--brd);font-family:'Noto Sans KR',sans-serif;font-size:14px;cursor:pointer;width:100%;max-width:300px}
+
+/* 목록 */
+.list-bar{display:flex;gap:8px;margin-bottom:14px}
+.list-bar input{flex:1;padding:9px 13px;border:1px solid var(--brd);background:var(--sur);font-family:'Noto Sans KR',sans-serif;font-size:13px;outline:none}
+.list-bar button{padding:9px 16px;background:var(--txt);color:#fff;border:none;font-family:'Noto Sans KR',sans-serif;font-size:13px;cursor:pointer}
+.rtbl{width:100%;border-collapse:collapse;background:var(--sur);font-size:13px}
+.rtbl th{padding:10px 13px;background:var(--bg);text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--sub);border-bottom:1px solid var(--brd);white-space:nowrap}
+.rtbl td{padding:11px 13px;border-bottom:1px solid var(--brd);vertical-align:middle}
+.rtbl tr:last-child td{border-bottom:none}
+.rtbl tr:hover td{background:var(--bg)}
+.sc{font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--bg);padding:2px 7px;border:1px solid var(--brd)}
+.pdf-btn{background:none;border:none;font-size:18px;cursor:pointer;padding:2px 5px}
+.empty{padding:48px;text-align:center;color:var(--sub);font-size:14px;background:var(--sur);border:1px solid var(--brd)}
+
+/* 사용자 조회 */
+.search-box{background:var(--sur);border:1px solid var(--brd);padding:28px;margin-bottom:20px}
+.search-row{display:flex;gap:8px;margin-bottom:10px}
+.search-inp{flex:1;padding:10px 13px;border:1px solid var(--brd);background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;outline:none}
+.search-inp:focus{border-color:var(--txt)}
+.search-btn{padding:10px 18px;background:var(--txt);color:#fff;border:none;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+
+@media(max-width:640px){
+  .card-grid{grid-template-columns:1fr}
+  .row2,.row3{grid-template-columns:1fr}
+  .wrap{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">KODA · 한국디지털광고협회</div>
+    <h1 class="login-title">행사 영수증 시스템</h1>
+    <p class="login-sub">골프대회 · 디지털광고대상 · 대표자연수<br>영수증 발행 및 조회 서비스</p>
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="swTab('user')">영수증 조회</button>
+      <button class="tab-btn" onclick="swTab('admin')">관리자</button>
+    </div>
+    <div id="userPanel">
+      <div class="fl">
+        <label>사업자등록번호</label>
+        <input class="fi" id="loginReg" placeholder="000-00-00000" oninput="fmtReg(this)" onkeydown="if(event.key==='Enter')userLogin()">
+      </div>
+      <button class="btn" onclick="userLogin()">영수증 조회</button>
+      <p style="font-size:12px;color:var(--sub);margin-top:10px;text-align:center">조회 안 되면 회사명으로도 검색 가능합니다</p>
+    </div>
+    <div id="adminPanel" style="display:none">
+      <div class="fl">
+        <label>관리자 비밀번호</label>
+        <input class="fi" id="adminPw" type="password" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')adminLogin()">
+      </div>
+      <button class="btn" onclick="adminLogin()">로그인</button>
+    </div>
+    <div id="loginErr" class="err"></div>
+  </div>
+</div>
+
+<!-- 메인 앱 -->
+<div id="mainApp">
+  <div class="topbar">
+    <div class="topbar-logo">KODA · EVENT INVOICE</div>
+    <div class="topbar-r">
+      <span class="mode-badge" id="modeBadge">USER</span>
+      <button class="logout-btn" onclick="logout()">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <!-- ① 홈 -->
+    <div id="pgHome" class="page active">
+      <!-- 어드민 홈 -->
+      <div id="adminHome">
+        <div class="home-hd">
+          <h1>영수증 발행</h1>
+          <p>발행할 영수증 종류를 선택하세요</p>
+        </div>
+        <div class="card-grid">
+          <div class="type-card golf" onclick="goPage('pgGolf')">
+            <div class="card-icon">⛳</div>
+            <div class="card-name">골프대회 참가비</div>
+            <div class="card-desc">협회장배 골프대회 참가비 영수증</div>
+          </div>
+          <div class="type-card award" onclick="goPage('pgAward')">
+            <div class="card-icon">🏆</div>
+            <div class="card-name">디지털 광고 대상</div>
+            <div class="card-desc">출품비 · 추가트로피 · 협찬금 · 환불금</div>
+          </div>
+          <div class="type-card train" onclick="goPage('pgTrain')">
+            <div class="card-icon">📋</div>
+            <div class="card-name">대표자 연수</div>
+            <div class="card-desc">대표자 연수 참가비 영수증</div>
+          </div>
+        </div>
+        <div class="nav-tabs">
+          <button class="nav-tab active" onclick="swList('golf')">⛳ 골프대회</button>
+          <button class="nav-tab" onclick="swList('award')">🏆 광고대상</button>
+          <button class="nav-tab" onclick="swList('train')">📋 대표자연수</button>
+        </div>
+        <div class="list-bar">
+          <input id="listSearch" placeholder="법인명 또는 일렬번호 검색" onkeydown="if(event.key==='Enter')loadList()">
+          <button onclick="loadList()">검색</button>
+        </div>
+        <div id="listWrap"></div>
+      </div>
+
+      <!-- 사용자 홈 -->
+      <div id="userHome" style="display:none">
+        <div class="home-hd"><h1>영수증 조회</h1><p>발급된 영수증을 조회하고 PDF로 다운로드하세요</p></div>
+        <div class="search-box">
+          <div style="font-size:15px;font-weight:700;margin-bottom:16px">🔍 영수증 검색</div>
+          <div class="search-row">
+            <input class="search-inp" id="uRegInput" placeholder="사업자등록번호 (예: 220-88-03176)" oninput="fmtReg(this)" onkeydown="if(event.key==='Enter')uSearch()">
+            <button class="search-btn" onclick="uSearch()">조회</button>
+          </div>
+          <div class="search-row">
+            <input class="search-inp" id="uNameInput" placeholder="회사명으로 검색" onkeydown="if(event.key==='Enter')uSearchName()">
+            <button class="search-btn" onclick="uSearchName()">회사명 검색</button>
+          </div>
+        </div>
+        <div id="uResult"></div>
+      </div>
+    </div>
+
+    <!-- ② 골프 발행 -->
+    <div id="pgGolf" class="page">
+      <div class="page-hd">
+        <button class="back-btn" onclick="goPage('pgHome')">← 홈</button>
+        <h2 class="page-title">골프대회 참가비 영수증</h2>
+        <span class="pill pill-golf">GOLF</span>
+      </div>
+      <div id="golfWrap">
+        <!-- 붙여넣기 섹션 -->
+        <div class="sec">
+          <div class="sec-label">📋 엑셀 붙여넣기 (빠른 입력)</div>
+          <p class="paste-hint">기존 로우 데이터를 <strong>헤더 포함</strong> 그대로 복사해서 붙여넣으세요. G열(회사명) 기준으로 회원사를 자동 매칭합니다.</p>
+          <div class="paste-cols">
+            <span class="paste-col">A: NO</span>
+            <span class="paste-col">B: 일렬번호</span>
+            <span class="paste-col">C: 거래일시</span>
+            <span class="paste-col">D: 번호</span>
+            <span class="paste-col">E: 입금액</span>
+            <span class="paste-col">F: 회사명</span>
+            <span class="paste-col">G: 법인명 (매칭 기준)</span>
+          </div>
+          <textarea class="ptxt" id="golfPasteTxt" placeholder="NO	일렬번호	거래일시	번호	입금액	입금자명	회사명&#10;1	250409-01	2025-04-09	1	700,000	이엠씨지	주식회사 이엠씨지"></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn" style="background:var(--golf)" onclick="parsePaste('golf')">🔍 내용 불러오기</button>
+            <button class="btn" style="background:var(--sub);width:auto;padding:10px 16px" onclick="document.getElementById('golfPasteTxt').value=''">초기화</button>
+          </div>
+          <div id="golfPasteResult" style="margin-top:10px"></div>
+        </div>
+
+        <!-- 수동 입력 폼 -->
+        <div class="sec">
+          <div class="sec-label">발행 정보</div>
+          <div class="row2">
+            <div class="fl"><label>행사명</label>
+              <select class="fi" id="golfEventName">
+                <option>2025 협회장배 골프대회</option>
+                <option>2026 협회장배 골프대회</option>
+                <option>직접입력</option>
+              </select>
+            </div>
+            <div class="fl"><label>발행일 *</label><input class="fi" type="date" id="golfIssueDate"></div>
+          </div>
+        </div>
+        <div class="sec">
+          <div class="sec-label">1. 납부자</div>
+          <div class="row2">
+            <div class="fl"><label>법인명 *</label><input class="fi" id="golfName" placeholder="주식회사 ○○○" list="golfNameList"><datalist id="golfNameList"></datalist></div>
+            <div class="fl"><label>사업자등록번호</label><input class="fi" id="golfReg" placeholder="000-00-00000" oninput="fmtReg(this)"></div>
+          </div>
+          <div class="row1"><div class="fl"><label>주소</label><input class="fi" id="golfAddr" placeholder="서울특별시 ..."></div></div>
+        </div>
+        <div class="sec">
+          <div class="sec-label">3. 납부내용</div>
+          <div class="row3">
+            <div class="fl"><label>납부일 *</label><input class="fi" type="date" id="golfPayDate"></div>
+            <div class="fl"><label>금액 (원) *</label><input class="fi" id="golfAmt" placeholder="700,000" oninput="fmtAmt(this)" style="text-align:right"></div>
+            <div class="fl"><label>비고</label><input class="fi" id="golfNote" placeholder="2人 참가비"></div>
+          </div>
+        </div>
+        <div id="golfErr" class="err" style="margin-bottom:10px"></div>
+        <button class="sub-btn golf" onclick="submitGolf()">영수증 발행</button>
+      </div>
+      <div id="golfSuc" style="display:none"></div>
+    </div>
+
+    <!-- ③ 광고대상 발행 -->
+    <div id="pgAward" class="page">
+      <div class="page-hd">
+        <button class="back-btn" onclick="goPage('pgHome')">← 홈</button>
+        <h2 class="page-title">디지털 광고 대상 영수증</h2>
+        <span class="pill pill-award">AWARD</span>
+      </div>
+      <div id="awardWrap">
+        <!-- 붙여넣기 -->
+        <div class="sec">
+          <div class="sec-label">📋 엑셀 붙여넣기 (빠른 입력)</div>
+          <p class="paste-hint">기존 로우 데이터를 <strong>헤더 포함</strong> 그대로 복사해서 붙여넣으세요. G열(회사명) 기준으로 회원사를 자동 매칭합니다.</p>
+          <div class="paste-cols">
+            <span class="paste-col">A: 법인명</span>
+            <span class="paste-col">B: 사업자등록번호</span>
+            <span class="paste-col">C: 주소</span>
+            <span class="paste-col">D: 납부일</span>
+            <span class="paste-col">E: 구분 (출품비/추가트로피/협찬금/환불금)</span>
+            <span class="paste-col">F: 금액</span>
+            <span class="paste-col">G: 비고</span>
+          </div>
+          <textarea class="ptxt" id="awardPasteTxt" placeholder="NO	일렬번호	거래일시	번호	입금액	입금자명	회사명&#10;1	251013-01	2025-10-13	1	200,000	가치브라더	주식회사 가치브라더"></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn" style="background:var(--award)" onclick="parsePaste('award')">🔍 내용 불러오기</button>
+            <button class="btn" style="background:var(--sub);width:auto;padding:10px 16px" onclick="document.getElementById('awardPasteTxt').value=''">초기화</button>
+          </div>
+          <div id="awardPasteResult" style="margin-top:10px"></div>
+        </div>
+
+        <div class="sec">
+          <div class="sec-label">발행 정보</div>
+          <div class="row2">
+            <div class="fl"><label>행사명</label>
+              <select class="fi" id="awardEventName">
+                <option>2025 대한민국 디지털 광고 대상</option>
+                <option>2026 대한민국 디지털 광고 대상</option>
+                <option>직접입력</option>
+              </select>
+            </div>
+            <div class="fl"><label>발행일 *</label><input class="fi" type="date" id="awardIssueDate"></div>
+          </div>
+        </div>
+        <div class="sec">
+          <div class="sec-label">1. 납부자</div>
+          <div class="row2">
+            <div class="fl"><label>법인명 *</label><input class="fi" id="awardName" placeholder="주식회사 ○○○" list="awardNameList"><datalist id="awardNameList"></datalist></div>
+            <div class="fl"><label>사업자등록번호</label><input class="fi" id="awardReg" placeholder="000-00-00000" oninput="fmtReg(this)"></div>
+          </div>
+          <div class="row1"><div class="fl"><label>주소</label><input class="fi" id="awardAddr" placeholder="서울특별시 ..."></div></div>
+        </div>
+        <div class="sec">
+          <div class="sec-label">3. 납부내용</div>
+          <div id="awardItems"></div>
+          <button class="add-btn" onclick="addItem()">+ 항목 추가</button>
+          <div class="total-prev"><span>총계</span><span id="awardTotal" style="font-weight:700">0 원</span></div>
+        </div>
+        <div id="awardErr" class="err" style="margin-bottom:10px"></div>
+        <button class="sub-btn award" onclick="submitAward()">영수증 발행</button>
+      </div>
+      <div id="awardSuc" style="display:none"></div>
+    </div>
+
+    <!-- ④ 대표자연수 발행 -->
+    <div id="pgTrain" class="page">
+      <div class="page-hd">
+        <button class="back-btn" onclick="goPage('pgHome')">← 홈</button>
+        <h2 class="page-title">대표자 연수 참가비 영수증</h2>
+        <span class="pill pill-train">TRAINING</span>
+      </div>
+      <div id="trainWrap">
+        <div class="sec">
+          <div class="sec-label">📋 엑셀 붙여넣기 (빠른 입력)</div>
+          <p class="paste-hint">기존 로우 데이터를 <strong>헤더 포함</strong> 그대로 복사해서 붙여넣으세요. G열(회사명) 기준으로 회원사를 자동 매칭합니다.</p>
+          <div class="paste-cols">
+            <span class="paste-col">A: 법인명</span>
+            <span class="paste-col">B: 사업자등록번호</span>
+            <span class="paste-col">C: 주소</span>
+            <span class="paste-col">D: 납부일</span>
+            <span class="paste-col">E: 금액</span>
+            <span class="paste-col">F: 비고</span>
+          </div>
+          <textarea class="ptxt" id="trainPasteTxt" placeholder="NO	일렬번호	거래일시	번호	입금액	입금자명	회사명&#10;1	250101-01	2025-01-01	1	300,000	회사명	법인명"></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn" style="background:var(--train)" onclick="parsePaste('train')">🔍 내용 불러오기</button>
+            <button class="btn" style="background:var(--sub);width:auto;padding:10px 16px" onclick="document.getElementById('trainPasteTxt').value=''">초기화</button>
+          </div>
+          <div id="trainPasteResult" style="margin-top:10px"></div>
+        </div>
+
+        <div class="sec">
+          <div class="sec-label">발행 정보</div>
+          <div class="row2">
+            <div class="fl"><label>행사명</label>
+              <select class="fi" id="trainEventName">
+                <option>2025 대표자 연수</option>
+                <option>2026 대표자 연수</option>
+                <option>직접입력</option>
+              </select>
+            </div>
+            <div class="fl"><label>발행일 *</label><input class="fi" type="date" id="trainIssueDate"></div>
+          </div>
+        </div>
+        <div class="sec">
+          <div class="sec-label">1. 납부자</div>
+          <div class="row2">
+            <div class="fl"><label>법인명 *</label><input class="fi" id="trainName" placeholder="주식회사 ○○○" list="trainNameList"><datalist id="trainNameList"></datalist></div>
+            <div class="fl"><label>사업자등록번호</label><input class="fi" id="trainReg" placeholder="000-00-00000" oninput="fmtReg(this)"></div>
+          </div>
+          <div class="row1"><div class="fl"><label>주소</label><input class="fi" id="trainAddr" placeholder="서울특별시 ..."></div></div>
+        </div>
+        <div class="sec">
+          <div class="sec-label">3. 납부내용</div>
+          <div class="row3">
+            <div class="fl"><label>납부일 *</label><input class="fi" type="date" id="trainPayDate"></div>
+            <div class="fl"><label>금액 (원) *</label><input class="fi" id="trainAmt" placeholder="300,000" oninput="fmtAmt(this)" style="text-align:right"></div>
+            <div class="fl"><label>비고</label><input class="fi" id="trainNote" placeholder=""></div>
+          </div>
+        </div>
+        <div id="trainErr" class="err" style="margin-bottom:10px"></div>
+        <button class="sub-btn train" onclick="submitTrain()">영수증 발행</button>
+      </div>
+      <div id="trainSuc" style="display:none"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── 설정 ──────────────────────────────────────
+const SB_URL = 'https://xyfhxvhmsmurzrmwhvpb.supabase.co'
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5Zmh4dmhtc211cnpybXdodnBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MTY1MDUsImV4cCI6MjA4OTM5MjUwNX0.Z4pUbLKL5gPZKmKt71oPZeTLrD0jNbM4YzJYFh0XK-Q'
+const ADMIN_PW = 'koda2025!'
+
+// ── 회원사 데이터 ──────────────────────────────
+const INITIAL_MEMBERS = [
+  {biz:'구글코리아(유)',reg:'120-86-65164',addr:'서울특별시 강남구 테헤란로 152 역삼동 강남파이낸스센터 22층'},
+  {biz:'그랑몬스터㈜',reg:'220-88-04194',addr:'서울특별시 강남구 삼성로 511 골든타워 5층'},
+  {biz:'㈜그루컴퍼니',reg:'220-88-80926',addr:'서울특별시 성동구 성수이로 10길 14, 에이스하이엔드성수타워 1201,1202,1203호'},
+  {biz:'㈜나무커뮤니케이션',reg:'120-86-46264',addr:'서울특별시 송파구 중대로 135, 13층 서관 1301호'},
+  {biz:'주식회사 케이티나스미디어',reg:'220-81-80363',addr:'서울특별시 강남구 도곡로1길 14, 3층 4층, 5층'},
+  {biz:'네이버㈜',reg:'220-81-62517',addr:'경기도 성남시 분당구 정자일로 95'},
+  {biz:'㈜넥스트미디어그룹',reg:'545-81-00889',addr:'서울특별시 강남구 언주로 637, 13층(논현동, 싸이칸타워)'},
+  {biz:'㈜다츠',reg:'204-81-39066',addr:'서울특별시 서초구 방배동 753-12'},
+  {biz:'㈜다트미디어',reg:'107-86-93497',addr:'서울특별시 영등포구 양평동 3가 15-1 월드메르디앙비즈센터 407호'},
+  {biz:'㈜더에스엠씨',reg:'108-81-93684',addr:'서울특별시 강남구 봉은사로49길 22, 더에스엠씨빌딩 2층'},
+  {biz:'㈜드림인사이트',reg:'114-87-03025',addr:'서울특별시 구로구 디지털로33길 12, 우림이비지센터2차 14층'},
+  {biz:'㈜디뉴먼트',reg:'172-86-00221',addr:'서울특별시 금천구 가산디지털2로 108, 502호, 907호'},
+  {biz:'㈜디엑스이',reg:'581-81-00925',addr:'서울특별시 중구 동호로 330, 8층'},
+  {biz:'㈜디지털다임',reg:'211-86-90483',addr:'서울특별시 용산구 한남동 대사관로11길 41 디투인터랙티브 빌딩'},
+  {biz:'㈜디지털트리니티',reg:'211-88-21544',addr:'서울특별시 용산구 서빙고로 17, 센트럴파크타워 24층'},
+  {biz:'디지털퍼스트㈜',reg:'770-81-00660',addr:'서울특별시 용산구 서빙고로 17, 센트럴파크타워 25층'},
+  {biz:'㈜디트라이브',reg:'220-86-10218',addr:'서울특별시 성동구 왕십리로 125, 1002호'},
+  {biz:'㈜디퍼플',reg:'211-88-70292',addr:'서울특별시 강남구 언주로 609 (논현동, 팍스타워) A동 7층'},
+  {biz:'㈜디플랜360',reg:'647-86-01398',addr:'서울특별시 강남구 테헤란로 443, 11층'},
+  {biz:'리머지(유)',reg:'655-81-01701',addr:'서울특별시 강남구 선릉로 428, 14층 126호'},
+  {biz:'㈜리서치애드',reg:'220-86-93863',addr:'서울특별시 강남구 학동로34길 16 티플러스빌딩 2층'},
+  {biz:'㈜마더브레인',reg:'211-88-24084',addr:'서울특별시 서초구 서초대로 77길 서초W타워 15-16층'},
+  {biz:'㈜망고스타코리아',reg:'443-86-00365',addr:'서울특별시 강남구 선릉로 91길 14, 선릉빌딩 402호'},
+  {biz:'㈜매드업',reg:'119-87-06634',addr:'서울특별시 서초구 서초대로 74길 4, 삼성생명서초타워 20층'},
+  {biz:'㈜매드코퍼레이션',reg:'365-88-01262',addr:'서울특별시 강남구 테헤란로 123, 15층 1501호'},
+  {biz:'㈜씨제이메조미디어',reg:'120-81-88352',addr:'서울특별시 중구 동호로 330, 4층'},
+  {biz:'㈜모비데이즈',reg:'832-87-01824',addr:'서울특별시 강남구 언주로 417, 지하1층-8층'},
+  {biz:'㈜모티브인텔리전스',reg:'212-86-09248',addr:'서울특별시 강남구 테헤란로 132, 13층'},
+  {biz:'㈜미래아이엔씨',reg:'106-81-93204',addr:'서울특별시 금천구 가산디지털2로 144, 13층'},
+  {biz:'주식회사 미래피엠피',reg:'742-81-02251',addr:'서울특별시 강남구 언주로149길 9(논현동, 시엘빌딩)'},
+  {biz:'주식회사 바이너리큐브',reg:'211-88-78353',addr:'서울특별시 성동구 성수이로 147, 506호 507호'},
+  {biz:'㈜버즈빌',reg:'119-86-55841',addr:'서울특별시 송파구 석촌호수로 272 엠와이빌딩 2-5층'},
+  {biz:'㈜베리타스커넥트',reg:'220-86-45056',addr:'서울특별시 서초구 강남대로331, 9층'},
+  {biz:'볼디㈜',reg:'556-88-02095',addr:'서울특별시 강남구 압구정로 36길 12, 6층'},
+  {biz:'봄센㈜',reg:'516-88-00648',addr:'서울특별시 성동구 광나루로 176 4,5층'},
+  {biz:'주식회사 블루오렌지커뮤니케이션즈',reg:'264-81-37022',addr:'서울특별시 서초구 서초대로48길 33, 3층 301호'},
+  {biz:'㈜비욘드마케팅그룹',reg:'120-86-46551',addr:'서울특별시 강남구 논현로 651 대한법무사회관 1, 5,6층'},
+  {biz:'㈜비즈스프링',reg:'120-86-63550',addr:'서울특별시 성동구 광나루로 130 서울숲IT캐슬'},
+  {biz:'㈜생각하는늑대',reg:'760-81-00931',addr:'서울특별시 강남구 테헤란로82길 15, 14층'},
+  {biz:'㈜수커뮤니케이션',reg:'220-88-00446',addr:'서울특별시 성동구 성수일로8길 5, 서울숲SK V1타워 A동 1204호'},
+  {biz:'㈜스타디엠코퍼레이션',reg:'181-86-01734',addr:'경기도 부천시 신흥로 234, 3층'},
+  {biz:'㈜스파클인터렉티브',reg:'264-81-08304',addr:'서울특별시 강남구 논현로 746, 4층'},
+  {biz:'주식회사 씨더블유',reg:'265-88-00736',addr:'서울특별시 강남구 도산대로16길 13-20, 지하 1층'},
+  {biz:'㈜아이디어키',reg:'220-87-07893',addr:'서울특별시 송파구 백제고분로 362, 3,4층'},
+  {biz:'㈜아이애드원',reg:'101-86-49275',addr:'서울특별시 서초구 서초대로 250 스타갤러리브릿지빌딩 12층'},
+  {biz:'주식회사 아이지에이웍스',reg:'220-87-41741',addr:'서울특별시 용산구 서빙고로 17, 24,25,26층'},
+  {biz:'㈜아인스미디어',reg:'109-86-20253',addr:'서울특별시 금천구 가산디지털2로 144, 19층'},
+  {biz:'㈜아치서울',reg:'804-81-01036',addr:'서울특별시 광진구 광나루로 478 광진경제허브센터 도약관 303호'},
+  {biz:'주식회사 숲',reg:'220-81-10886',addr:'경기도 성남시 분당구 판교로228번길 15'},
+  {biz:'애니포인트미디어㈜',reg:'696-88-00075',addr:'서울특별시 강남구 테헤란로87길 21, 6층'},
+  {biz:'㈜애드게이트',reg:'215-86-78948',addr:'서울특별시 성동구 성수동1가 13-214 동진아이티타워 12층'},
+  {biz:'㈜애드미션',reg:'220-86-54614',addr:'서울특별시 서초구 서운로 9길 14, 일석빌딩 4층, 5층'},
+  {biz:'애드온컴퍼니㈜',reg:'220-88-61138',addr:'서울특별시 송파구 올림픽로 269, 803호'},
+  {biz:'㈜애드이피션시',reg:'264-81-02917',addr:'서울특별시 서초구 효령로77길 28 동오빌딩 4층, 6층'},
+  {biz:'주식회사 애드쿠아인터렉티브',reg:'211-87-25387',addr:'서울특별시 강남구 언주로 637, 2,3,4층'},
+  {biz:'네이트커뮤니케이션즈 주식회사',reg:'220-81-37906',addr:'서울특별시 중구 소월로2길 30'},
+  {biz:'㈜에이디쏠인터렉티브',reg:'602-87-01640',addr:'서울특별시 성동구 성수일로10길 26, 15층'},
+  {biz:'㈜에이엠피엠글로벌',reg:'105-86-67746',addr:'서울특별시 금천구 가산디지털2로 144, 11층 1101호'},
+  {biz:'㈜에이원퍼포먼스팩토리',reg:'120-88-17220',addr:'서울특별시 강남구 테헤란로83길32, 나라키움빌딩 A동 4층'},
+  {biz:'㈜에이전시더블유',reg:'120-86-45135',addr:'서울특별시 강남구 봉은사로 49길 7 대양빌딩 2층'},
+  {biz:'㈜에이치에스애드',reg:'105-81-29368',addr:'서울특별시 마포구 마포대로 155 LG마포빌딩'},
+  {biz:'주식회사 엔비티',reg:'211-88-83652',addr:'서울특별시 강남구 논현로 145길 31'},
+  {biz:'엔에이치엔애드㈜',reg:'144-81-27690',addr:'경기도 성남시 분당구 대왕판교로645번길 16, NHN 플레이뮤지엄 5층'},
+  {biz:'㈜엔에이치엔에이스',reg:'313-81-35670',addr:'경기도 성남시 분당구 대왕판교로 645번길 16, 플레이뮤지엄 NHN ACE'},
+  {biz:'㈜엘지씨엔에스',reg:'116-81-19477',addr:'서울특별시 강서구 마곡중앙8로 71'},
+  {biz:'㈜엠코퍼레이션',reg:'534-87-00616',addr:'서울특별시 강남구 논현로 503, 12층'},
+  {biz:'주식회사 엠투디지털',reg:'102-81-43774',addr:'서울특별시 용산구 한강대로 372 KDB생명타워 13층'},
+  {biz:'㈜엠플랜잇',reg:'345-86-01551',addr:'서울특별시 강남구 언주로93길 21, 5층'},
+  {biz:'㈜엠피인터랙티브',reg:'113-86-41728',addr:'서울특별시 구로구 디지털로 306 대륭포스트타워 2차 607호'},
+  {biz:'㈜엣지랭크',reg:'211-88-82541',addr:'서울특별시 강남구 언주로 133길 26-5'},
+  {biz:'㈜예지솔루션',reg:'211-87-59290',addr:'서울특별시 금천구 가산디지털2로 166, 3층'},
+  {biz:'㈜오버맨',reg:'503-87-00058',addr:'서울특별시 서초구 강남대로 85길 20'},
+  {biz:'온더플래닛㈜',reg:'182-87-01578',addr:'서울특별시 중구 통일로10, 17층'},
+  {biz:'㈜아티스트유나이티드',reg:'114-86-82149',addr:'서울특별시 강남구 도산대로 430, 3층'},
+  {biz:'㈜와이즈버즈',reg:'703-86-00909',addr:'경기도 성남시 수정구 금토로 69, 5층'},
+  {biz:'㈜와일리',reg:'211-88-56742',addr:'서울특별시 강남구 학동로 336, 5층'},
+  {biz:'㈜위시미디어',reg:'495-86-00691',addr:'서울특별시 강남구 테헤란로 79길11 A타워 3층'},
+  {biz:'㈜위플랫폼',reg:'467-81-00594',addr:'서울특별시 금천구 가산디지털1로 165, 가산비즈니스센터 601호'},
+  {biz:'㈜유어비즈',reg:'220-87-31452',addr:'서울특별시 송파구 송파대로 167, 에이동 1222호'},
+  {biz:'㈜이너스커뮤니티',reg:'220-81-75706',addr:'서울특별시 마포구 양화로 147, 5층'},
+  {biz:'㈜이레컴즈',reg:'120-87-41500',addr:'서울특별시 구로구 디지털로 273 에이스트윈타워2차 306호'},
+  {biz:'㈜이스터씨앤아이',reg:'211-87-45554',addr:'서울특별시 강남구 삼성로 134길 8'},
+  {biz:'크리에이터링 주식회사',reg:'503-87-03360',addr:'서울특별시 서초구 바우뫼로27길 7-11, 대송빌딩 1층'},
+  {biz:'㈜이엠넷',reg:'214-86-56053',addr:'서울특별시 구로구 디지털로34길 27 대륭포스트타워 3차 14층'},
+  {biz:'㈜이인벤션',reg:'109-86-17438',addr:'서울특별시 구로구 디지털로31길 38-21, 10층 1009호'},
+  {biz:'(유)이프로애드',reg:'214-87-64680',addr:'서울특별시 강남구 선릉로 642, 3층'},
+  {biz:'㈜인라이플',reg:'113-86-60934',addr:'서울특별시 구로구 디지털로 272 한신아이티타워 501~504호'},
+  {biz:'㈜인크로스',reg:'214-88-13475',addr:'서울특별시 관악구 남부순환로 1926'},
+  {biz:'㈜인터웍스미디어',reg:'120-87-28467',addr:'서울특별시 강남구 테헤란로 534 글라스타워빌딩 30층'},
+  {biz:'Integral Ad Science Japan K.K',reg:'0104-01-117454',addr:'1-1-2 Yurakucho Chiyoda-ku, Tokyo, Japan'},
+  {biz:'㈜제이브릿지컴퍼니',reg:'144-81-25649',addr:'경기도 성남시 분당구 성남대로331번길 8, 606,607호'},
+  {biz:'㈜제이슨그룹',reg:'220-87-01996',addr:'서울특별시 용산구 서빙고로 17, 센트럴파크타워 26~27층'},
+  {biz:'㈜제일기획',reg:'202-81-45960',addr:'서울특별시 용산구 이태원로 222'},
+  {biz:'젤리피쉬코리아(유)',reg:'265-87-01169',addr:'서울특별시 서초구 강남대로 373'},
+  {biz:'㈜차이커뮤니케이션',reg:'211-87-51624',addr:'서울특별시 강남구 논현로 132길 40'},
+  {biz:'㈜카카오',reg:'120-81-47521',addr:'제주특별자치도 제주시 첨단로 242'},
+  {biz:'카페24 주식회사',reg:'118-81-20586',addr:'서울특별시 동작구 보라매로5길 15'},
+  {biz:'㈜케이피알앤드어소시에이츠',reg:'203-81-61115',addr:'서울특별시 중구 퇴계로 173, 남산스퀘어 14층'},
+  {biz:'주식회사 코마스인터렉티브',reg:'211-88-15173',addr:'서울특별시 강남구 학동로 311'},
+  {biz:'주식회사 코비그룹',reg:'706-81-00941',addr:'서울특별시 강남구 도산대로4길15, 6층'},
+  {biz:'크리테오코리아(유)',reg:'559-88-01270',addr:'서울특별시 강남구 테헤란로 152 강남파이낸스센터 41층'},
+  {biz:'㈜키스톤마케팅컴퍼니',reg:'211-88-43738',addr:'서울특별시 서초구 서초대로78길 5, 대각빌딩 13층'},
+  {biz:'㈜토이306',reg:'201-86-04355',addr:'서울특별시 강남구 테헤란로79길 6, 5층'},
+  {biz:'㈜트리플하이엠',reg:'220-86-93067',addr:'서울특별시 금천구 디지털로 121 에이스가산타워 10층'},
+  {biz:'㈜티디아이플레이',reg:'601-81-37139',addr:'서울특별시 서초구 서초대로 64길 8, 4층'},
+  {biz:'㈜티엠씨케이',reg:'107-87-79319',addr:'서울특별시 서초구 강남대로263, 3,5층'},
+  {biz:'TikTok Pte. Ltd.',reg:'201719908M',addr:'서울특별시 강남구 테헤란로 518 섬유센터, 12층'},
+  {biz:'㈜판도라티비',reg:'220-81-57969',addr:'경기도 성남시 분당구 대왕판교로644번길 49, 11층'},
+  {biz:'㈜퍼틸레인',reg:'211-88-36090',addr:'서울특별시 강남구 봉은사로86길 6 빌딩레베쌍트 8층'},
+  {biz:'주식회사 퍼포먼스바이티비더블유에이',reg:'504-88-00873',addr:'서울특별시 중구 세종대로 39, 5층'},
+  {biz:'피코코리아 주식회사',reg:'116-81-43166',addr:'서울특별시 강남구 언주로 804, 2층 201호'},
+  {biz:'주식회사 펜타브리드',reg:'114-86-12129',addr:'서울특별시 서초구 서운로26길 9'},
+  {biz:'메가존㈜',reg:'214-86-79342',addr:'서울특별시 강남구 학동로23길 18 펜타클빌딩'},
+  {biz:'주식회사 프로그레스미디어',reg:'113-86-27124',addr:'서울특별시 구로구 디지털로26길 43, L동 19층'},
+  {biz:'㈜플레이디',reg:'129-86-43885',addr:'경기도 성남시 분당구 황새울로 359번길 11, 5~6층'},
+  {biz:'㈜피알원',reg:'110-81-75199',addr:'서울특별시 서대문구 충정로 70, 19층'},
+  {biz:'㈜픽스다인무브먼트',reg:'893-87-02148',addr:'서울특별시 강남구 테헤란로 501, 6층 601호'},
+  {biz:'㈜하나애드아이엠씨',reg:'117-81-48164',addr:'서울특별시 영등포구 여의도동 17-3 삼환까뮤빌딩 2층'},
+  {biz:'페리온',reg:'캐나다 법인',addr:'서울특별시 강남구 영동대로 417 오토웨이타워'},
+  {biz:'주식회사 오피엠에스',reg:'220-87-03688',addr:'서울특별시 강남구 역삼로 555, 1층 101호'},
+  {biz:'㈜함샤우트글로벌',reg:'882-86-01894',addr:'서울특별시 마포구 포은로2가길 57, 한울빌딩'},
+  {biz:'㈜휴먼미디어그룹',reg:'736-81-00321',addr:'경기도 부천시 길주로 279, 서호빌딩 601호'},
+  {biz:'㈜이노션',reg:'220-87-09310',addr:'서울특별시 강남구 강남대로 308'},
+  {biz:'㈜비바리퍼블리카',reg:'120-88-01280',addr:'서울특별시 강남구 테헤란로 142, 아크플레이스'},
+  {biz:'비에이티㈜',reg:'567-87-00493',addr:'서울특별시 강남구 논현로153길 53, 4층'},
+  {biz:'주식회사 호잇커뮤니케이션즈',reg:'707-88-02918',addr:'서울특별시 강남구 선릉로94길 12, 6층'},
+  {biz:'주식회사더쏠트',reg:'395-87-02057',addr:'서울특별시 강남구 삼성로95길 6, 5층'},
+  {biz:'주식회사 크로마엔터테인먼트',reg:'333-86-02300',addr:'서울특별시 강남구 테헤란로83길 15, 6층'},
+  {biz:'㈜나인독',reg:'751-87-02354',addr:'서울특별시 성동구 성수일로 56, 1105호, 1106호'},
+  {biz:'주식회사 함파트너스',reg:'106-86-49566',addr:'서울특별시 마포구 마포대로 89, 4층'},
+  {biz:'주식회사 엠서치마케팅',reg:'495-86-02326',addr:'서울특별시 금천구 벚꽃로 298 대룡포스트타워6차 907호'},
+  {biz:'주식회사 몽규',reg:'865-86-01676',addr:'서울특별시 마포구 성미산로 103'},
+  {biz:'주식회사 레뷰코퍼레이션',reg:'261-81-22044',addr:'서울특별시 강남구 논현로 135길 29'},
+  {biz:'㈜벨커뮤니케이션즈',reg:'110-81-33831',addr:'서울특별시 서대문구 충정로 8, 8층 804호'},
+  {biz:'㈜포이시스',reg:'120-86-14175',addr:'서울특별시 금천구 가산디지털1로 137, 1101호'},
+  {biz:'커뮤니크㈜',reg:'106-86-12981',addr:'서울특별시 용산구 한강대로44길 14'},
+  {biz:'PTKOREA',reg:'214-84-06262',addr:'서울특별시 강남구 강남대로 372, FINE TOWER'},
+  {biz:'애드커넥스 주식회사',reg:'451-81-03048',addr:'서울특별시 영등포구 당산로 141, 5층'},
+  {biz:'주식회사 스마일코리아',reg:'109-86-39941',addr:'서울특별시 금천구 가산디지털1로 168, B동 9층'},
+  {biz:'주식회사 커스텀그라운드',reg:'562-86-02500',addr:'서울특별시 서초구 방배로 97, 3층'},
+  {biz:'주식회사 가치브라더',reg:'119-86-81107',addr:'서울특별시 구로구 디지털로31길 19, 404호'},
+  {biz:'주식회사 잘함',reg:'860-86-00013',addr:'서울특별시 용산구 우사단로 14길 74'},
+  {biz:'주식회사 스냅컴퍼니',reg:'858-88-00654',addr:'서울특별시 강남구 테헤란로32길 27'},
+  {biz:'주식회사 퍼즐코퍼레이션',reg:'703-81-02391',addr:'서울특별시 마포구 양화로81, H스퀘어'},
+  {biz:'주식회사 카카오페이',reg:'527-88-00686',addr:'경기도 성남시 분당구 판교역로 166, 비동15층'},
+  {biz:'주식회사 이엠씨지',reg:'220-88-03176',addr:'서울특별시 용산구 한강대로15길 9-5, 402호'},
+  {biz:'하이브월드와이드 주식회사',reg:'220-88-11002',addr:'서울특별시 성동구 연무장5길 9-16, 11층 1101호'},
+  {biz:'더트레이드데스크 주식회사',reg:'120-88-12448',addr:'서울특별시 강남구 테헤란로 152, 41층'},
+  {biz:'닐슨미디어코리아 유한회사',reg:'303-87-00138',addr:'서울특별시 중구 서소문로 50, 15층'},
+  {biz:'주식회사 케이앤웍스',reg:'201-81-90900',addr:'제주특별자치도 제주시 첨단로242, 2층'},
+  {biz:'주식회사 포바이포',reg:'712-87-00690',addr:'서울특별시 서초구 강남대로 479, 12층'},
+  {biz:'애디플 주식회사',reg:'173-87-02933',addr:'서울특별시 구로구 디지털로30길 31, 1407호'},
+  {biz:'엑솔라코리아 유한회사',reg:'120-88-20050',addr:'서울특별시 강남구 테헤란로 412, 13층'},
+  {biz:'주식회사 제이비컴스컴퍼니',reg:'106-86-48271',addr:'경기도 고양시 덕양구 으뜸로8, 13층 1305호'},
+  {biz:'주식회사 엘리케이트',reg:'178-86-01325',addr:'서울특별시 강남구 봉은사로26길 22-12, 102호'},
+  {biz:'투겟 주식회사',reg:'448-86-03426',addr:'서울특별시 구로구 디지털로26길 43, 제12층'},
+  {biz:'주식회사 부스터즈',reg:'455-86-01557',addr:'서울특별시 강남구 언주로 637, 12층'},
+  {biz:'주식회사 써치엠',reg:'211-88-14382',addr:'서울특별시 강남구 논현로 319, 3층,4층'},
+  {biz:'주식회사 지엔앰퍼포먼스',reg:'211-88-76923',addr:'서울특별시 강남구 봉은사로 114, 2층'},
+  {biz:'주식회사 씨브이쓰리',reg:'891-81-02188',addr:'서울특별시 서초구 서초대로77길 39, 8층 801호'},
+  {biz:'㈜어센드미디어',reg:'148-86-02380',addr:'서울특별시 금천구 가산디지털2로 144, 807~808'},
+  {biz:'얀고애즈',reg:'1802868',addr:'UAE, Dubai, Trade Center Second, The Offices 5'},
+  {biz:'주식회사 이엔미디어',reg:'183-87-00290',addr:'서울특별시 강서구 강서로56가길 141, 6층'},
+  {biz:'주식회사 유디엠',reg:'119-86-49825',addr:'서울특별시 금천구 가산디지털2로135, 1동16층'},
+  {biz:'주식회사 트레져헌터',reg:'120-88-23509',addr:'서울특별시 성동구 성수이로20길 16, 8층'},
+  {biz:'주식회사 런커뮤니케이션즈',reg:'853-88-00057',addr:'서울특별시 성동구 뚝섬로1길 25, 9층 903호'},
+  {biz:'주식회사 벡터컴',reg:'211-88-21068',addr:'서울특별시 강남구 테헤란로26길 14 위워크빌딩 9층'},
+  {biz:'주식회사 히히',reg:'507-81-17393',addr:'서울특별시 강남구 강남대로128길 81, 4층'}
+];
+
+// ── 상태 ──────────────────────────────────────
+let mode = null
+let listTab = 'golf'
+let aItems = []
+let lastData = null
+
+// ── 유틸 ──────────────────────────────────────
+const today = () => new Date().toISOString().split('T')[0]
+
+function fmtReg(el) {
+  let v = el.value.replace(/\D/g,'').slice(0,10)
+  if(v.length>5) v=v.slice(0,3)+'-'+v.slice(3,5)+'-'+v.slice(5)
+  else if(v.length>3) v=v.slice(0,3)+'-'+v.slice(3)
+  el.value=v
+}
+
+function fmtAmt(el) {
+  const r=el.value.replace(/[^0-9]/g,'')
+  el.dataset.raw=r
+  el.value=r?Number(r).toLocaleString():''
+}
+
+function parseAmt(el) { return Number(el.dataset.raw||el.value.replace(/[^0-9]/g,'')||0) }
+
+function fmtMoney(n) { return (n<0?'-':'')+Math.abs(n).toLocaleString() }
+
+function fmtDate(d) { return d?d.replace(/-/g,'.').slice(2):'-' }
+
+function dateKo(d) {
+  if(!d) return ''
+  const [y,m,day]=d.split('-')
+  return `${y}년 ${m}월 ${day}일`
+}
+
+function norm(s) { return (s||'').replace(/[\s\(\)㈜주식회사유한회사]/g,'').toLowerCase() }
+
+function findMember(name) {
+  const n = norm(name)
+  return INITIAL_MEMBERS.find(m => norm(m.biz)===n || norm(m.biz).includes(n) || n.includes(norm(m.biz)))
+}
+
+// ── 로그인 ────────────────────────────────────
+function swTab(t) {
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',(i===0&&t==='user')||(i===1&&t==='admin')))
+  document.getElementById('userPanel').style.display=t==='user'?'block':'none'
+  document.getElementById('adminPanel').style.display=t==='admin'?'block':'none'
+  document.getElementById('loginErr').textContent=''
+}
+
+function adminLogin() {
+  if(document.getElementById('adminPw').value!==ADMIN_PW) {
+    document.getElementById('loginErr').textContent='비밀번호가 올바르지 않습니다'; return
+  }
+  mode='admin'; enterApp()
+}
+
+function userLogin() {
+  const reg=document.getElementById('loginReg').value.trim()
+  if(!reg){document.getElementById('loginErr').textContent='사업자등록번호를 입력하세요';return}
+  mode='user'; enterApp(reg)
+}
+
+function enterApp(reg) {
+  document.getElementById('loginScreen').style.display='none'
+  document.getElementById('mainApp').style.display='block'
+  document.getElementById('modeBadge').textContent=mode==='admin'?'ADMIN':'USER'
+  document.getElementById('adminHome').style.display=mode==='admin'?'block':'none'
+  document.getElementById('userHome').style.display=mode==='user'?'block':'none'
+
+  // 날짜 초기화
+  const t=today()
+  ;['golfIssueDate','golfPayDate','awardIssueDate','trainIssueDate','trainPayDate'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value=t
+  })
+
+  // 회원사 자동완성
+  initAutoComplete('golfName','golfReg','golfAddr')
+  initAutoComplete('awardName','awardReg','awardAddr')
+  initAutoComplete('trainName','trainReg','trainAddr')
+
+  // 광고대상 초기 항목
+  aItems=[]
+  document.getElementById('awardItems').innerHTML=''
+  addItem()
+
+  if(mode==='admin') loadList()
+  else {
+    document.getElementById('uRegInput').value=reg||''
+    if(reg) uSearch()
+  }
+}
+
+function logout() {
+  mode=null
+  document.getElementById('loginScreen').style.display='flex'
+  document.getElementById('mainApp').style.display='none'
+  document.getElementById('adminPw').value=''
+  document.getElementById('loginReg').value=''
+  document.getElementById('loginErr').textContent=''
+  goPage('pgHome')
+}
+
+// ── 자동완성 ──────────────────────────────────
+function initAutoComplete(nameId, regId, addrId) {
+  const inp=document.getElementById(nameId)
+  const dl=document.getElementById(nameId+'List')
+  if(!inp||!dl) return
+  dl.innerHTML=''
+  INITIAL_MEMBERS.forEach(m=>{
+    const o=document.createElement('option'); o.value=m.biz; dl.appendChild(o)
+  })
+  inp.addEventListener('change',()=>{
+    const found=INITIAL_MEMBERS.find(m=>m.biz===inp.value)
+    if(found){
+      const r=document.getElementById(regId), a=document.getElementById(addrId)
+      if(r&&!r.value) r.value=found.reg
+      if(a&&!a.value) a.value=found.addr
+    }
+  })
+}
+
+// ── 엑셀 붙여넣기 파싱 ────────────────────────
+function parsePaste(type) {
+  const txtId = type==='golf'?'golfPasteTxt':type==='award'?'awardPasteTxt':'trainPasteTxt'
+  const resId = type==='golf'?'golfPasteResult':type==='award'?'awardPasteResult':'trainPasteResult'
+  const txt = document.getElementById(txtId).value.trim()
+  if(!txt) { alert('내용을 붙여넣어 주세요'); return }
+
+  const lines = txt.split('\n').filter(l=>l.trim())
+  const results = []
+
+  lines.forEach(line=>{
+    const c = line.split('\t').map(s=>s.trim())
+    if(c.length<1||!c[0]) return
+
+    if(type==='golf'||type==='train') {
+      // A:법인명 B:사업자번호 C:주소 D:납부일 E:금액 F:비고
+      const name=c[0]||'', reg=c[1]||'', addr=c[2]||''
+      const payDate=c[3]||today(), amt=Number((c[4]||'0').replace(/,/g,'')), note=c[5]||''
+      const member=findMember(name)
+      results.push({name, reg:reg||member?.reg||'', addr:addr||member?.addr||'', payDate, amt, note, matched:!!member})
+    } else {
+      // A:법인명 B:사업자번호 C:주소 D:납부일 E:구분 F:금액 G:비고
+      const name=c[0]||'', reg=c[1]||'', addr=c[2]||''
+      const payDate=c[3]||today()
+      const itemType=c[4]||'출품비'
+      const amt=Number((c[5]||'0').replace(/,/g,''))
+      const note=c[6]||''
+      const member=findMember(name)
+      results.push({name, reg:reg||member?.reg||'', addr:addr||member?.addr||'', payDate, itemType, amt, note, matched:!!member})
+    }
+  })
+
+  if(!results.length) {
+    document.getElementById(resId).innerHTML='<div style="color:var(--danger);font-size:13px">파싱할 수 있는 내용이 없습니다. 탭으로 구분된 형식인지 확인해주세요.</div>'
+    return
+  }
+
+  const mc=results.filter(r=>r.matched).length
+  let html=`<div class="match-sum">총 <strong>${results.length}건</strong> 중 <span style="color:var(--ok);font-weight:700">${mc}건 회원사 매칭</span>, <span style="color:var(--sub);font-weight:700">${results.length-mc}건 미매칭</span></div>`
+  html+=`<div class="mlist">`
+  results.forEach((r,i)=>{
+    const badge=r.matched?'<span class="mi-badge ok-badge">✓ 매칭</span>':'<span class="mi-badge no-badge">미매칭</span>'
+    const detail = type==='award'
+      ? `${r.payDate} / ${r.itemType} / ${r.amt.toLocaleString()}원`
+      : `${r.payDate} / ${r.amt.toLocaleString()}원 / ${r.note||'-'}`
+    html+=`<div class="mi ${r.matched?'ok':'warn'}">
+      <div class="mi-name">${badge}${r.name}${r.reg?' ('+r.reg+')':''}</div>
+      <div class="mi-detail">${detail}</div>
+    </div>`
+  })
+  html+=`</div>`
+  html+=`<div class="apply-bar" style="margin-top:12px">
+    <button class="btn" style="background:var(--${type==='golf'?'golf':type==='award'?'award':'train'});width:auto;padding:10px 20px" onclick="applyPaste('${type}',${JSON.stringify(results).replace(/'/g,'&apos;')})">✅ 폼에 적용</button>
+    <span style="font-size:12px;color:var(--sub)">적용 후 내용을 확인하고 영수증을 발행하세요</span>
+  </div>`
+
+  document.getElementById(resId).innerHTML=html
+}
+
+function applyPaste(type, results) {
+  if(type==='golf') {
+    const r=results[0]
+    document.getElementById('golfName').value=r.name
+    document.getElementById('golfReg').value=r.reg
+    document.getElementById('golfAddr').value=r.addr
+    document.getElementById('golfPayDate').value=r.payDate
+    const amtEl=document.getElementById('golfAmt')
+    amtEl.dataset.raw=String(r.amt)
+    amtEl.value=r.amt.toLocaleString()
+    document.getElementById('golfNote').value=r.note||''
+    document.getElementById('golfPasteResult').innerHTML='<div style="color:var(--ok);font-size:13px;margin-top:6px">✅ 폼에 적용되었습니다. 내용을 확인하고 발행하세요.</div>'
+  } else if(type==='train') {
+    const r=results[0]
+    document.getElementById('trainName').value=r.name
+    document.getElementById('trainReg').value=r.reg
+    document.getElementById('trainAddr').value=r.addr
+    document.getElementById('trainPayDate').value=r.payDate
+    const amtEl=document.getElementById('trainAmt')
+    amtEl.dataset.raw=String(r.amt)
+    amtEl.value=r.amt.toLocaleString()
+    document.getElementById('trainNote').value=r.note||''
+    document.getElementById('trainPasteResult').innerHTML='<div style="color:var(--ok);font-size:13px;margin-top:6px">✅ 폼에 적용되었습니다. 내용을 확인하고 발행하세요.</div>'
+  } else {
+    // 광고대상: 같은 법인 여러 항목 처리
+    if(!results.length) return
+    const first=results[0]
+    document.getElementById('awardName').value=first.name
+    document.getElementById('awardReg').value=first.reg
+    document.getElementById('awardAddr').value=first.addr
+
+    // 항목 전체 교체
+    aItems=[]
+    document.getElementById('awardItems').innerHTML=''
+    results.forEach(r=>{
+      addItem(r.payDate, r.itemType, r.amt, r.note)
+    })
+    calcTotal()
+    document.getElementById('awardPasteResult').innerHTML='<div style="color:var(--ok);font-size:13px;margin-top:6px">✅ 폼에 적용되었습니다. 내용을 확인하고 발행하세요.</div>'
+  }
+}
+
+// ── 페이지 전환 ───────────────────────────────
+function goPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
+  document.getElementById(id).classList.add('active')
+  if(id==='pgGolf') resetGolf()
+  if(id==='pgAward') resetAward()
+  if(id==='pgTrain') resetTrain()
+}
+
+function swList(tab) {
+  listTab=tab
+  document.querySelectorAll('.nav-tab').forEach((b,i)=>b.classList.toggle('active',['golf','award','train'][i]===tab))
+  loadList()
+}
+
+// ── Supabase ──────────────────────────────────
+async function sb(path,opts={}) {
+  const res=await fetch(`${SB_URL}/rest/v1/${path}`,{
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':opts.prefer||'return=representation',...(opts.headers||{})},
+    ...opts
+  })
+  const t=await res.text(); return t?JSON.parse(t):null
+}
+
+async function nextSerial(type, dateStr) {
+  const rows=await sb(`receipt_counters?receipt_type=eq.${type}&select=*`)
+  const c=rows?.[0]
+  const newSeq=(c&&c.counter_date.replace(/-/g,'').slice(2)===dateStr)?c.last_seq+1:1
+  const fullDate=`20${dateStr.slice(0,2)}-${dateStr.slice(2,4)}-${dateStr.slice(4,6)}`
+  await sb(`receipt_counters?receipt_type=eq.${type}`,{method:'PATCH',prefer:'return=minimal',body:JSON.stringify({counter_date:fullDate,last_seq:newSeq})})
+  return `KODA-${dateStr}-${String(newSeq).padStart(2,'0')}`
+}
+
+function dateSerial(d) { return d.replace(/-/g,'').slice(2) }
+
+// ── 골프 ──────────────────────────────────────
+function resetGolf() {
+  ;['golfName','golfReg','golfAddr','golfNote'].forEach(id=>document.getElementById(id).value='')
+  const a=document.getElementById('golfAmt'); a.value=''; a.dataset.raw=''
+  document.getElementById('golfIssueDate').value=today()
+  document.getElementById('golfPayDate').value=today()
+  document.getElementById('golfErr').textContent=''
+  document.getElementById('golfPasteTxt').value=''
+  document.getElementById('golfPasteResult').innerHTML=''
+  document.getElementById('golfWrap').style.display='block'
+  document.getElementById('golfSuc').style.display='none'
+}
+
+async function submitGolf() {
+  const name=document.getElementById('golfName').value.trim()
+  const issueDate=document.getElementById('golfIssueDate').value
+  const payDate=document.getElementById('golfPayDate').value
+  const amt=parseAmt(document.getElementById('golfAmt'))
+  const err=document.getElementById('golfErr')
+  if(!name){err.textContent='법인명을 입력하세요';return}
+  if(!amt){err.textContent='금액을 입력하세요';return}
+  err.textContent=''
+  const btn=document.querySelector('#pgGolf .sub-btn')
+  btn.disabled=true; btn.textContent='발행 중...'
+  try {
+    const serial=await nextSerial('golf',dateSerial(issueDate))
+    const rec={serial_number:serial,issue_date:issueDate,payer_name:name,payer_reg_no:document.getElementById('golfReg').value||null,payer_address:document.getElementById('golfAddr').value||null,payment_date:payDate,amount:amt,note:document.getElementById('golfNote').value||null}
+    const saved=await sb('golf_receipts',{method:'POST',body:JSON.stringify(rec)})
+    lastData={type:'golf',...rec,id:saved?.[0]?.id}
+    showSuc('golf',serial)
+  } catch(e){err.textContent='오류: '+e.message}
+  finally{btn.disabled=false;btn.textContent='영수증 발행'}
+}
+
+// ── 광고대상 ──────────────────────────────────
+const ITEM_TYPES=['출품비','추가트로피','협찬금','환불금']
+
+function resetAward() {
+  ;['awardName','awardReg','awardAddr'].forEach(id=>document.getElementById(id).value='')
+  document.getElementById('awardIssueDate').value=today()
+  document.getElementById('awardErr').textContent=''
+  document.getElementById('awardPasteTxt').value=''
+  document.getElementById('awardPasteResult').innerHTML=''
+  document.getElementById('awardWrap').style.display='block'
+  document.getElementById('awardSuc').style.display='none'
+  aItems=[]; document.getElementById('awardItems').innerHTML=''; addItem()
+}
+
+function addItem(payDate, itemType, amt, note) {
+  const id=Date.now()+Math.random()
+  aItems.push(id)
+  const div=document.createElement('div')
+  div.className='item-block'; div.id='ai_'+id
+  div.innerHTML=`
+    <div class="item-hd">
+      <span class="item-num">항목 ${aItems.length}</span>
+      <button class="rm-btn" onclick="removeItem(${id})">✕ 삭제</button>
+    </div>
+    <div class="row3">
+      <div class="fl"><label>납부일 *</label><input class="fi" type="date" id="ad_${id}" value="${payDate||today()}" onchange="calcTotal()"></div>
+      <div class="fl"><label>구분 *</label>
+        <select class="fi" id="at_${id}" onchange="calcTotal()">
+          ${ITEM_TYPES.map(t=>`<option${t===(itemType||'출품비')?' selected':''}>${t}</option>`).join('')}
+        </select>
+      </div>
+      <div class="fl"><label>금액 (원) *</label><input class="fi" id="aa_${id}" value="${amt?Number(amt).toLocaleString():''}" oninput="fmtAmt(this);calcTotal()" style="text-align:right" data-raw="${amt||''}"></div>
+    </div>
+    <div class="fl"><label>비고</label><input class="fi" id="an_${id}" value="${note||''}"></div>
+    <div id="refHint_${id}" style="display:${itemType==='환불금'?'block':'none'};font-size:12px;color:var(--danger);margin-top:4px">→ 음수(환불)로 저장됩니다</div>`
+  document.getElementById('awardItems').appendChild(div)
+  updateItemNums(); calcTotal()
+}
+
+function removeItem(id) {
+  if(aItems.length<=1) return
+  aItems=aItems.filter(i=>i!==id)
+  document.getElementById('ai_'+id).remove()
+  updateItemNums(); calcTotal()
+}
+
+function updateItemNums() {
+  aItems.forEach((id,i)=>{
+    const el=document.querySelector('#ai_'+id+' .item-num')
+    if(el) el.textContent='항목 '+(i+1)
+  })
+}
+
+function calcTotal() {
+  let t=0
+  aItems.forEach(id=>{
+    const type=document.getElementById('at_'+id)?.value
+    const amtEl=document.getElementById('aa_'+id)
+    const amt=parseAmt(amtEl)
+    const hint=document.getElementById('refHint_'+id)
+    if(hint) hint.style.display=type==='환불금'?'block':'none'
+    t+=type==='환불금'?-amt:amt
+  })
+  const el=document.getElementById('awardTotal')
+  el.textContent=fmtMoney(t)+' 원'
+  el.style.color=t<0?'var(--danger)':'var(--txt)'
+}
+
+async function submitAward() {
+  const name=document.getElementById('awardName').value.trim()
+  const issueDate=document.getElementById('awardIssueDate').value
+  const err=document.getElementById('awardErr')
+  if(!name){err.textContent='법인명을 입력하세요';return}
+  const items=[]
+  for(const id of aItems){
+    const type=document.getElementById('at_'+id)?.value
+    const amt=parseAmt(document.getElementById('aa_'+id))
+    if(!amt){err.textContent='모든 항목의 금액을 입력하세요';return}
+    items.push({payment_date:document.getElementById('ad_'+id).value,item_type:type,amount:type==='환불금'?-amt:amt,quantity:1,unit_price:null,note:document.getElementById('an_'+id).value||null,sort_order:items.length})
+  }
+  err.textContent=''
+  const btn=document.querySelector('#pgAward .sub-btn')
+  btn.disabled=true; btn.textContent='발행 중...'
+  try {
+    const serial=await nextSerial('award',dateSerial(issueDate))
+    const total=items.reduce((s,it)=>s+it.amount,0)
+    const header={serial_number:serial,issue_date:issueDate,payer_name:name,payer_reg_no:document.getElementById('awardReg').value||null,payer_address:document.getElementById('awardAddr').value||null,total_amount:total}
+    const saved=await sb('award_receipts',{method:'POST',body:JSON.stringify(header)})
+    const rid=saved?.[0]?.id
+    await sb('award_receipt_items',{method:'POST',body:JSON.stringify(items.map(it=>{return{...it,receipt_id:rid}}))})
+    lastData={type:'award',...header,items,id:rid}
+    showSuc('award',serial)
+  } catch(e){err.textContent='오류: '+e.message}
+  finally{btn.disabled=false;btn.textContent='영수증 발행'}
+}
+
+// ── 대표자연수 ────────────────────────────────
+function resetTrain() {
+  ;['trainName','trainReg','trainAddr','trainNote'].forEach(id=>document.getElementById(id).value='')
+  const a=document.getElementById('trainAmt'); a.value=''; a.dataset.raw=''
+  document.getElementById('trainIssueDate').value=today()
+  document.getElementById('trainPayDate').value=today()
+  document.getElementById('trainErr').textContent=''
+  document.getElementById('trainPasteTxt').value=''
+  document.getElementById('trainPasteResult').innerHTML=''
+  document.getElementById('trainWrap').style.display='block'
+  document.getElementById('trainSuc').style.display='none'
+}
+
+async function submitTrain() {
+  const name=document.getElementById('trainName').value.trim()
+  const issueDate=document.getElementById('trainIssueDate').value
+  const payDate=document.getElementById('trainPayDate').value
+  const amt=parseAmt(document.getElementById('trainAmt'))
+  const err=document.getElementById('trainErr')
+  if(!name){err.textContent='법인명을 입력하세요';return}
+  if(!amt){err.textContent='금액을 입력하세요';return}
+  err.textContent=''
+  const btn=document.querySelector('#pgTrain .sub-btn')
+  btn.disabled=true; btn.textContent='발행 중...'
+  try {
+    const serial=await nextSerial('training',dateSerial(issueDate))
+    const rec={serial_number:serial,issue_date:issueDate,payer_name:name,payer_reg_no:document.getElementById('trainReg').value||null,payer_address:document.getElementById('trainAddr').value||null,payment_date:payDate,amount:amt,note:document.getElementById('trainNote').value||null}
+    const saved=await sb('training_receipts',{method:'POST',body:JSON.stringify(rec)})
+    lastData={type:'train',...rec,id:saved?.[0]?.id}
+    showSuc('train',serial)
+  } catch(e){err.textContent='오류: '+e.message}
+  finally{btn.disabled=false;btn.textContent='영수증 발행'}
+}
+
+// ── 발행 완료 ─────────────────────────────────
+function showSuc(type, serial) {
+  const wrapId=type==='golf'?'golfWrap':type==='award'?'awardWrap':'trainWrap'
+  const sucId=type==='golf'?'golfSuc':type==='award'?'awardSuc':'trainSuc'
+  document.getElementById(wrapId).style.display='none'
+  document.getElementById(sucId).style.display='block'
+  document.getElementById(sucId).innerHTML=`
+    <div class="success-box">
+      <div class="suc-icon">✅</div>
+      <h2 class="suc-title">영수증이 발행되었습니다</h2>
+      <div class="serial-disp">${serial}</div>
+      <div class="suc-acts">
+        <button class="dl-btn ${type}" onclick="genPDF('${type}')">📄 PDF 다운로드</button>
+        <button class="new-btn" onclick="goPage('pg${type==='golf'?'Golf':type==='award'?'Award':'Train'}')">+ 새 영수증 발행</button>
+        <button class="new-btn" onclick="goPage('pgHome')">← 홈으로</button>
+      </div>
+    </div>`
+}
+
+// ── 목록 ──────────────────────────────────────
+async function loadList() {
+  const q=document.getElementById('listSearch').value.trim()
+  const wrap=document.getElementById('listWrap')
+  wrap.innerHTML='<div class="empty">불러오는 중...</div>'
+  try {
+    let url, data
+    if(listTab==='golf') {
+      url=`golf_receipts?select=*&order=created_at.desc&limit=50`+(q?`&or=(payer_name.ilike.*${q}*,serial_number.ilike.*${q}*)`:'')
+      data=await sb(url)||[]
+      wrap.innerHTML=data.length?renderGolfTbl(data):'<div class="empty">데이터가 없습니다</div>'
+    } else if(listTab==='award') {
+      url=`award_receipts?select=*&order=created_at.desc&limit=50`+(q?`&or=(payer_name.ilike.*${q}*,serial_number.ilike.*${q}*)`:'')
+      data=await sb(url)||[]
+      wrap.innerHTML=data.length?renderAwardTbl(data):'<div class="empty">데이터가 없습니다</div>'
+    } else {
+      url=`training_receipts?select=*&order=created_at.desc&limit=50`+(q?`&or=(payer_name.ilike.*${q}*,serial_number.ilike.*${q}*)`:'')
+      data=await sb(url)||[]
+      wrap.innerHTML=data.length?renderTrainTbl(data):'<div class="empty">데이터가 없습니다</div>'
+    }
+  } catch(e) { wrap.innerHTML=`<div class="empty">오류: ${e.message}</div>` }
+}
+
+function renderGolfTbl(rows) {
+  return `<table class="rtbl"><thead><tr><th>일렬번호</th><th>발행일</th><th>법인명</th><th>사업자번호</th><th style="text-align:right">금액</th><th>비고</th><th>PDF</th></tr></thead><tbody>
+  ${rows.map(r=>`<tr><td><span class="sc">${r.serial_number}</span></td><td>${fmtDate(r.issue_date)}</td><td>${r.payer_name}</td><td style="color:var(--sub);font-size:12px">${r.payer_reg_no||'-'}</td><td style="text-align:right;font-weight:600">${Number(r.amount).toLocaleString()}원</td><td style="color:var(--sub)">${r.note||'-'}</td><td><button class="pdf-btn" onclick="dlFromDB('golf',${r.id})">📄</button></td></tr>`).join('')}</tbody></table>`
+}
+
+function renderAwardTbl(rows) {
+  return `<table class="rtbl"><thead><tr><th>일렬번호</th><th>발행일</th><th>법인명</th><th>사업자번호</th><th style="text-align:right">총액</th><th>PDF</th></tr></thead><tbody>
+  ${rows.map(r=>{const neg=Number(r.total_amount)<0; return `<tr><td><span class="sc">${r.serial_number}</span></td><td>${fmtDate(r.issue_date)}</td><td>${r.payer_name}</td><td style="color:var(--sub);font-size:12px">${r.payer_reg_no||'-'}</td><td style="text-align:right;font-weight:600;color:${neg?'var(--danger)':'inherit'}">${fmtMoney(r.total_amount)}원</td><td><button class="pdf-btn" onclick="dlFromDB('award',${r.id})">📄</button></td></tr>`}).join('')}</tbody></table>`
+}
+
+function renderTrainTbl(rows) {
+  return `<table class="rtbl"><thead><tr><th>일렬번호</th><th>발행일</th><th>법인명</th><th>사업자번호</th><th style="text-align:right">금액</th><th>비고</th><th>PDF</th></tr></thead><tbody>
+  ${rows.map(r=>`<tr><td><span class="sc">${r.serial_number}</span></td><td>${fmtDate(r.issue_date)}</td><td>${r.payer_name}</td><td style="color:var(--sub);font-size:12px">${r.payer_reg_no||'-'}</td><td style="text-align:right;font-weight:600">${Number(r.amount).toLocaleString()}원</td><td style="color:var(--sub)">${r.note||'-'}</td><td><button class="pdf-btn" onclick="dlFromDB('train',${r.id})">📄</button></td></tr>`).join('')}</tbody></table>`
+}
+
+// ── 사용자 조회 ───────────────────────────────
+async function uSearch() {
+  const reg=document.getElementById('uRegInput').value.replace(/-/g,'').trim()
+  if(!reg) return
+  const fmt=reg.slice(0,3)+'-'+reg.slice(3,5)+'-'+reg.slice(5)
+  await searchReceipts('payer_reg_no=eq.'+fmt)
+}
+
+async function uSearchName() {
+  const name=document.getElementById('uNameInput').value.trim()
+  if(!name) return
+  await searchReceipts('payer_name=ilike.*'+name+'*')
+}
+
+async function searchReceipts(filter) {
+  const wrap=document.getElementById('uResult')
+  wrap.innerHTML='<div class="empty">조회 중...</div>'
+  try {
+    const [g,a,t]=await Promise.all([
+      sb(`golf_receipts?${filter}&select=*&order=created_at.desc`),
+      sb(`award_receipts?${filter}&select=*&order=created_at.desc`),
+      sb(`training_receipts?${filter}&select=*&order=created_at.desc`),
+    ])
+    const all=[...(g||[]).map(r=>{return{...r,_t:'golf'}}),...(a||[]).map(r=>{return{...r,_t:'award'}}),...(t||[]).map(r=>{return{...r,_t:'train'}})]
+      .sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))
+    if(!all.length){wrap.innerHTML='<div class="empty">발급된 영수증이 없습니다<br><small style="display:block;margin-top:6px">회사명으로 다시 검색해보세요</small></div>';return}
+    const tl={golf:'⛳ 골프대회',award:'🏆 광고대상',train:'📋 대표자연수'}
+    const tc={golf:'var(--golf)',award:'var(--award)',train:'var(--train)'}
+    wrap.innerHTML=`<div style="font-size:13px;color:var(--sub);margin-bottom:10px">총 ${all.length}건의 영수증이 있습니다</div>
+    <table class="rtbl"><thead><tr><th>종류</th><th>일렬번호</th><th>발행일</th><th style="text-align:right">금액</th><th>PDF</th></tr></thead><tbody>
+    ${all.map(r=>{const amt=r._t==='award'?r.total_amount:r.amount;return `<tr><td><span style="font-size:12px;font-weight:700;color:${tc[r._t]}">${tl[r._t]}</span></td><td><span class="sc">${r.serial_number}</span></td><td>${fmtDate(r.issue_date)}</td><td style="text-align:right;font-weight:600;color:${Number(amt)<0?'var(--danger)':'inherit'}">${fmtMoney(amt)}원</td><td><button class="pdf-btn" onclick="dlFromDB('${r._t}',${r.id})">📄</button></td></tr>`}).join('')}</tbody></table>`
+  } catch(e){wrap.innerHTML=`<div class="empty">오류: ${e.message}</div>`}
+}
+
+// ── PDF 생성 ──────────────────────────────────
+async function dlFromDB(type, id) {
+  try {
+    let data
+    if(type==='golf') {
+      const r=await sb(`golf_receipts?id=eq.${id}&select=*`); data={type:'golf',...r[0]}
+    } else if(type==='award') {
+      const r=await sb(`award_receipts?id=eq.${id}&select=*`)
+      const items=await sb(`award_receipt_items?receipt_id=eq.${id}&select=*&order=sort_order.asc`)
+      data={type:'award',...r[0],items}
+    } else {
+      const r=await sb(`training_receipts?id=eq.${id}&select=*`); data={type:'train',...r[0]}
+    }
+    genPDF(type, data)
+  } catch(e) { alert('PDF 오류: '+e.message) }
+}
+
+function genPDF(type, data) {
+  const d=data||lastData
+  if(!d) return
+  const titles={golf:'골프대회 참가비 영수증',award:'대한민국 디지털 광고 대상 영수증',train:'대표자 연수 참가비 영수증'}
+  renderCanvas(d, titles[type]||titles[d.type], type||d.type)
+}
+
+const ISSUER={name:'(사)한국디지털광고협회',reg:'215-82-13855',addr:'서울시 송파구 올림픽로 35길 137, 한국광고문화회관 10층'}
+
+function renderCanvas(d, title, type) {
+  const cv=document.createElement('canvas'); cv.width=794; cv.height=1123
+  const ctx=cv.getContext('2d')
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,794,1123)
+  const ML=56,CW=682,MT=51
+
+  // 일렬번호
+  ctx.font='500 22px "Noto Sans KR"'; ctx.fillStyle='#888'; ctx.textAlign='left'
+  ctx.fillText('일렬번호  '+d.serial_number, ML, MT)
+
+  // 제목
+  ctx.font='bold 36px "Noto Sans KR"'; ctx.fillStyle='#1A1916'; ctx.textAlign='center'
+  ctx.fillText(title, 397, MT+52)
+
+  // 구분선
+  ctx.strokeStyle='#1A1916'; ctx.lineWidth=2
+  ctx.beginPath(); ctx.moveTo(ML,MT+66); ctx.lineTo(ML+CW,MT+66); ctx.stroke()
+
+  let y=MT+86
+
+  // 납부자
+  ctx.font='bold 20px "Noto Sans KR"'; ctx.fillStyle='#1A1916'; ctx.textAlign='left'
+  ctx.fillText('1. 납부자', ML, y+16); y+=28
+  y=drawInfoTbl(ctx,[[' 법 인 명 ',d.payer_name,' 사업자등록번호 ',d.payer_reg_no||''],[' 주   소 ',d.payer_address||'','','']],ML,y,CW,true)
+  y+=12
+
+  // 납부처
+  ctx.font='bold 20px "Noto Sans KR"'; ctx.fillStyle='#1A1916'; ctx.textAlign='left'
+  ctx.fillText('2. 납부처', ML, y+16); y+=28
+  y=drawInfoTbl(ctx,[[' 법 인 명 ',ISSUER.name,' 사업자등록번호 ',ISSUER.reg],[' 주   소 ',ISSUER.addr,'','']],ML,y,CW,true)
+  y+=12
+
+  // 납부내용
+  ctx.font='bold 20px "Noto Sans KR"'; ctx.fillStyle='#1A1916'; ctx.textAlign='left'
+  ctx.fillText('3. 납부내용', ML, y+16); y+=28
+
+  if(type==='award') {
+    y=drawAwardTbl(ctx, d.items||[], ML, y, CW)
+  } else {
+    const detail=type==='golf'?'골프대회 참가비':'대표자 연수 참가비'
+    y=drawPayTbl(ctx,[{date:d.payment_date,detail,amount:d.amount,note:d.note||''}],d.amount,ML,y,CW)
+  }
+
+  y+=28
+  const isRefund=type==='award'&&d.items?.every(it=>it.item_type==='환불금')
+  ctx.font='bold 28px "Noto Sans KR"'; ctx.textAlign='center'
+  ctx.fillText(isRefund?'위와 같이 환불하였음을 확인합니다.':'위와 같이 영수하였음을 확인합니다.', 397, y)
+  y+=36
+  ctx.font='500 24px "Noto Sans KR"'
+  ctx.fillText(dateKo(d.issue_date), 397, y)
+  y+=36
+  ctx.font='500 22px "Noto Sans KR"'; ctx.textAlign='right'
+  ctx.fillStyle='#333'
+  ctx.fillText('주관처: '+ISSUER.name+'  (인)', ML+CW, y)
+  y+=34
+  ctx.fillText(d.payer_name+' 귀하', ML+CW, y)
+
+  const img=cv.toDataURL('image/png')
+  const {jsPDF}=window.jspdf
+  const pdf=new jsPDF({unit:'mm',format:'a4'})
+  pdf.addImage(img,'PNG',0,0,210,297)
+  const fname=`KODA_${type==='golf'?'골프대회':type==='award'?'광고대상':'대표자연수'}_${d.payer_name}_${d.serial_number}.pdf`
+  pdf.save(fname)
+}
+
+function drawInfoTbl(ctx,rows,x,y,cw,spanAddr) {
+  const rh=40, cols=[cw*.13,cw*.35,cw*.17,cw*.35]
+  rows.forEach((row,ri)=>{
+    let cx=x
+    const isAddr=spanAddr&&ri===1
+    row.forEach((cell,ci)=>{
+      const w=isAddr&&ci>0?(ci===1?cw-cols[0]:0):cols[ci]
+      if(isAddr&&ci>1) return
+      ctx.strokeStyle='#ccc'; ctx.lineWidth=1; ctx.strokeRect(cx,y+ri*rh,w,rh)
+      const isHdr=ci===0||ci===2
+      if(isHdr){ctx.fillStyle='#F0F0F0'; ctx.fillRect(cx+.5,y+ri*rh+.5,w-1,rh-1)}
+      else{ctx.fillStyle='#fff'; ctx.fillRect(cx+.5,y+ri*rh+.5,w-1,rh-1)}
+      ctx.font=(isHdr?'bold ':'500 ')+'17px "Noto Sans KR"'; ctx.fillStyle='#1A1916'; ctx.textAlign='left'
+      ctx.fillText(cell||'', cx+7, y+ri*rh+25)
+      cx+=w
+    })
+  })
+  return y+rows.length*rh
+}
+
+function drawPayTbl(ctx,rows,total,x,y,cw) {
+  const rh=40, cols=[cw*.16,cw*.42,cw*.25,cw*.17]
+  const hdrs=['연월일','세부내용','금   액','비   고']
+  let cx=x
+  hdrs.forEach((h,ci)=>{
+    ctx.strokeStyle='#ccc'; ctx.lineWidth=1; ctx.strokeRect(cx,y,cols[ci],rh)
+    ctx.fillStyle='#F0F0F0'; ctx.fillRect(cx+.5,y+.5,cols[ci]-1,rh-1)
+    ctx.font='bold 17px "Noto Sans KR"'; ctx.fillStyle='#1A1916'; ctx.textAlign='center'
+    ctx.fillText(h,cx+cols[ci]/2,y+25); cx+=cols[ci]
+  })
+  y+=rh
+  rows.forEach(r=>{
+    cx=x
+    const cells=[r.date,r.detail,Number(r.amount).toLocaleString(),r.note]
+    cells.forEach((cell,ci)=>{
+      ctx.strokeStyle='#ccc'; ctx.lineWidth=1; ctx.strokeRect(cx,y,cols[ci],rh)
+      ctx.fillStyle='#fff'; ctx.fillRect(cx+.5,y+.5,cols[ci]-1,rh-1)
+      ctx.font='500 16px "Noto Sans KR"'; ctx.fillStyle='#1A1916'
+      ctx.textAlign=ci===2?'right':'center'
+      ctx.fillText(cell||'',ci===2?cx+cols[ci]-7:cx+cols[ci]/2,y+25); cx+=cols[ci]
+    }); y+=rh
+  })
+  cx=x
+  ;['총   계','',fmtMoney(total),''].forEach((cell,ci)=>{
+    ctx.strokeStyle='#ccc'; ctx.lineWidth=1; ctx.strokeRect(cx,y,cols[ci],rh)
+    ctx.fillStyle='#F5F5F5'; ctx.fillRect(cx+.5,y+.5,cols[ci]-1,rh-1)
+    ctx.font='bold 17px "Noto Sans KR"'; ctx.fillStyle='#1A1916'
+    ctx.textAlign=ci===2?'right':'center'
+    ctx.fillText(cell,ci===2?cx+cols[ci]-7:cx+cols[ci]/2,y+25); cx+=cols[ci]
+  }); ctx.textAlign='left'; return y+rh
+}
+
+function drawAwardTbl(ctx,items,x,y,cw) {
+  const rh=40, cols=[cw*.16,cw*.42,cw*.25,cw*.17]
+  const hdrs=['연월일','세부내용','금   액','비   고']
+  let cx=x
+  hdrs.forEach((h,ci)=>{
+    ctx.strokeStyle='#ccc'; ctx.lineWidth=1; ctx.strokeRect(cx,y,cols[ci],rh)
+    ctx.fillStyle='#F0F0F0'; ctx.fillRect(cx+.5,y+.5,cols[ci]-1,rh-1)
+    ctx.font='bold 17px "Noto Sans KR"'; ctx.fillStyle='#1A1916'; ctx.textAlign='center'
+    ctx.fillText(h,cx+cols[ci]/2,y+25); cx+=cols[ci]
+  }); y+=rh
+  let total=0
+  items.forEach(item=>{
+    total+=item.amount; cx=x
+    const cells=[item.payment_date,item.item_type,fmtMoney(item.amount),item.note||'']
+    cells.forEach((cell,ci)=>{
+      ctx.strokeStyle='#ccc'; ctx.lineWidth=1; ctx.strokeRect(cx,y,cols[ci],rh)
+      ctx.fillStyle='#fff'; ctx.fillRect(cx+.5,y+.5,cols[ci]-1,rh-1)
+      ctx.font='500 16px "Noto Sans KR"'
+      ctx.fillStyle=ci===2&&item.amount<0?'#C0392B':'#1A1916'
+      ctx.textAlign=ci===2?'right':'center'
+      ctx.fillText(cell||'',ci===2?cx+cols[ci]-7:cx+cols[ci]/2,y+25); cx+=cols[ci]
+    }); y+=rh
+  })
+  cx=x
+  ;['총   계','',fmtMoney(total),''].forEach((cell,ci)=>{
+    ctx.strokeStyle='#ccc'; ctx.lineWidth=1; ctx.strokeRect(cx,y,cols[ci],rh)
+    ctx.fillStyle='#F5F5F5'; ctx.fillRect(cx+.5,y+.5,cols[ci]-1,rh-1)
+    ctx.font='bold 17px "Noto Sans KR"'; ctx.fillStyle='#1A1916'
+    ctx.textAlign=ci===2?'right':'center'
+    ctx.fillText(cell,ci===2?cx+cols[ci]-7:cx+cols[ci]/2,y+25); cx+=cols[ci]
+  }); ctx.textAlign='left'; return y+rh
+}
+</script>
+</body>
+</html>
